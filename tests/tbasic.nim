@@ -1,6 +1,5 @@
 import unittest
 
-import tables
 import dbus
 
 const
@@ -44,7 +43,7 @@ test "basic":
   msg.append(1'i32)
   msg.append("hello".asDbusValue)
   msg.append(@["a", "b"])
-  msg.append({"a": "b"}.toTable)
+  msg.append(@{"a": "b"})
   msg.append(ObjectPath("/a"))
   msg.append(@[ObjectPath("/b")])
   
@@ -85,26 +84,26 @@ test "struct":
   check val.structValues[1].asNative(uint32) == 2
 
 test "tables":
-  let val = testEcho({"a":"b"}.toTable())
+  let val = testEcho(@{"a":"b"})
   check val.kind == dtArray
   check val.arrayValueType.kind == dtDictEntry
   check val.arrayValue[0].dictKey.asNative(string) == "a"
   check val.arrayValue[0].dictValue.asNative(string) == "b"
 
 test "tables nested":
-  let val = testEcho({
-    "a": newVariant({
+  let val = testEcho(@{
+    "a": newVariant(@{
       "c":"d"
-    }.toTable())
-  }.toTable())
+    })
+  })
   check val.kind == dtArray
   check val.arrayValue[0].dictKey.asNative(string) == "a"
   check val.arrayValue[0].dictValue.variantValue.arrayValue[0].dictKey.asNative(string) == "c"
   check val.arrayValue[0].dictValue.variantValue.arrayValue[0].dictValue.asNative(string) == "d"
 
 test "tables mixed variant":
-  let var1 = newVariant("foo").asDbusValue()
-  let var2 = newVariant(12.uint32).asDbusValue()
+  let var1 = newVariant("foo")
+  let var2 = newVariant(12.uint32)
   var dict = DbusValue(
     kind: dtArray,
     arrayValueType: DbusType(
@@ -113,8 +112,8 @@ test "tables mixed variant":
       valueType: dtVariant,
     )
   )
-  dict.add("a".asDbusValue(), var1)
-  dict.add("b".asDbusValue(), var2)
+  dict.add(("a", var1).asDbusValue)
+  dict.add(("b", var2).asDbusValue)
   let val = testEcho(dict)
   check val.kind == dtArray
   check val.arrayValue[0].dictKey.asNative(string) == "a"
@@ -140,9 +139,9 @@ test "tables mixed variant":
       valueType: dtString,
     )
   )
-  outer.add("a".asDbusValue(), newVariant("foo").asDbusValue())
-  inner.add("c".asDbusValue(), "d".asDbusValue())
-  outer.add("b".asDbusValue(), newVariant(inner).asDbusValue())
+  outer.add(("a", newVariant("foo")).asDbusValue)
+  inner.add(("c", "d").asDbusValue)
+  outer.add(("b", newVariant(inner)).asDbusValue)
   let val = testEcho(outer)
   check val.kind == dtArray
   check val.arrayValue[0].dictKey.asNative(string) == "a"
@@ -164,7 +163,7 @@ test "notify":
   msg.append("Test notification")
   msg.append("Test notification body")
   msg.append(newSeq[string]())
-  msg.append({"urgency": newVariant(1'u8)}.toTable)
+  msg.append(@{"urgency": newVariant(1'u8)})
   msg.append(-1'i32)
 
   let pending = bus.sendMessage(msg)

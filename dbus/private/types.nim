@@ -1,4 +1,4 @@
-import strutils, tables
+import strutils
 
 type ObjectPath* = distinct string
 type Signature* = distinct string
@@ -177,8 +177,7 @@ proc getAnyDbusType*[T](native: typedesc[T]): DbusType
 proc getAnyDbusType*(native: typedesc[string]): DbusType
 proc getAnyDbusType*(native: typedesc[ObjectPath]): DbusType
 proc getAnyDbusType*[T](native: typedesc[seq[T]]): DbusType
-proc getAnyDbusType*[K, V](native: typedesc[Table[K, V]]): DbusType
-proc getAnyDbusType*[K, V](native: typedesc[TableRef[K, V]]): DbusType
+proc getAnyDbusType*[K, V](native: typedesc[(K, V)]): DbusType
 
 proc getDbusType[T](native: typedesc[Variant[T]]): DbusType =
   initVariantType(getAnyDbusType(T))
@@ -192,11 +191,8 @@ proc getAnyDbusType*(native: typedesc[string]): DbusType =
 proc getAnyDbusType*(native: typedesc[ObjectPath]): DbusType =
   getDbusType(ObjectPath)
 
+proc getAnyDbusType*[K, V](native: typedesc[(K, V)]): DbusType =
+  initDictEntryType(getAnyDbusType(K), getAnyDbusType(V))
+
 proc getAnyDbusType*[T](native: typedesc[seq[T]]): DbusType =
-  initArrayType(getDbusType(T))
-
-proc getAnyDbusType*[K, V](native: typedesc[Table[K, V]]): DbusType =
-  initArrayType(initDictEntryType(getAnyDbusType(K), getAnyDbusType(V)))
-
-proc getAnyDbusType*[K, V](native: typedesc[TableRef[K, V]]): DbusType =
-  initArrayType(initDictEntryType(getAnyDbusType(K), getAnyDbusType(V)))
+  initArrayType(getAnyDbusType(T))

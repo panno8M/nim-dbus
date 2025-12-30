@@ -198,14 +198,10 @@ proc asDbusValue*[T](val: seq[T]): DbusValue =
   for x in val:
     result.arrayValue.add x.asDbusValue
 
-proc asDbusValue*[K, V](val: Table[K, V]): DbusValue =
-  result = DbusValue(kind: dtArray,
-                     arrayValueType: DbusType(kind: dtDictEntry,
-                                              keyType: getAnyDbusType(K),
-                                              valueType: getAnyDbusType(V)))
-  for k, v in val:
-    result.arrayValue.add(
-      createDictEntryDbusValue(asDbusValue(k), asDbusValue(v)))
+proc asDbusValue*[K, V](val: (K, V)): DbusValue =
+  result = DbusValue(kind: dtDictEntry,
+    dictKey: asDbusValue(val[0]),
+    dictValue: asDbusValue(val[1]))
 
 proc asDbusValue*(val: Variant[DbusValue]): DbusValue =
   DbusValue(kind: dtVariant, variantType: getDbusType(val.value),
@@ -255,12 +251,10 @@ proc asNative*[T](value: DbusValue, native: typedesc[seq[T]]): seq[T] =
   for str in value.arrayValue:
     result.add asNative(str, T)
 
-proc asNative*[T, K](value: DbusValue, native: typedesc[Table[T, K]]): Table[T, K] =
+proc asNative*[T, K](value: DbusValue, native: typedesc[(T, K)]): (T, K) =
   if value == nil: return
-  for kv in value.arrayValue:
-    result[asNative(kv.dictKey, T)] = asNative(kv.dictValue, K)
+  (asNative(value.dictKey, T), asNative(value.dictValue, K))
 
-proc add*(dict: DbusValue, key: DbusValue, value: DbusValue) =
+proc add*(dict: DbusValue, value: DbusValue) =
   doAssert dict.kind == dtArray
-  dict.arrayValue.add(
-    createDictEntryDbusValue(asDbusValue(key), asDbusValue(value)))
+  dict.arrayValue.add(value)
