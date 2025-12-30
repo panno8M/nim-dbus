@@ -41,8 +41,6 @@ type
     of dtVariant:
       variantType*: DbusType
       variantValue*: DbusValue
-    else:
-      discard
 
 proc `$`*(val: DbusValue): string =
   result.add("<DbusValue " & $val.kind & " ")
@@ -81,10 +79,6 @@ proc `$`*(val: DbusValue): string =
     result.add($val.byteValue)
   of dtVariant:
     result.add($val.variantType & ' ' & $val.variantValue)
-  of dtNull:
-    discard
-  of dtDict:
-    discard
   result.add('>')
 
 type DbusNativePrimitive = bool | float64 | int32 | int16 | uint16 | uint64 | uint32 | int64 | uint8
@@ -180,27 +174,21 @@ proc asDbusValue*(val: DbusValue): DbusValue =
 
 proc getDbusType*(val: DbusValue): DbusType =
   case val.kind
-  of dbusScalarTypes:
+  of dbusFixedTypes:
     return val.kind
   of dbusStringTypes:
     return val.kind
   of dtArray:
     return DbusType(kind: dtArray, itemType: val.arrayValueType)
-  of dtNull:
-    return dtNull
   of dtDictEntry:
     return DbusType(kind: dtDictEntry,
                     keyType: getDbusType(val.dictKey),
                     valueType: getDbusType(val.dictValue))
-  of dtUnixFd:
-    return dtUnixFd
   of dtStruct:
     return DbusType(kind: dtStruct,
                     itemTypes: val.structValues.mapIt(getDbusType(it)))
   of dtVariant:
     return DbusType(kind: dtVariant, variantType: val.variantType)
-  of dtDict:
-    return val.kind
 
 proc getAnyDbusType*(val: DbusValue): DbusType =
   getDbusType(val)

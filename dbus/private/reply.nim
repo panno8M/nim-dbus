@@ -58,11 +58,9 @@ proc subIterate*(iter: var InputIter): InputIter =
   dbus_message_iter_recurse(addr iter.iter, addr result.iter)
 
 proc unpackCurrent*(iter: var InputIter, native: typedesc[DbusValue]): DbusValue =
-  let kind = dbus_message_iter_get_arg_type(addr iter.iter).DbusTypeChar
+  let kind = dbus_message_iter_get_arg_type(addr iter.iter).char.type
   case kind:
-  of dtNull:
-    return DbusValue(kind: dtNull)
-  of dbusScalarTypes:
+  of dbusFixedTypes:
     let (value, scalarPtr) = createScalarDbusValue(kind)
     dbus_message_iter_get_basic(addr iter.iter, scalarPtr)
     return value
@@ -86,10 +84,8 @@ proc unpackCurrent*(iter: var InputIter, native: typedesc[DbusValue]): DbusValue
     var values: seq[DbusValue]
     var subkind: DbusType
     while true:
-      let subkindInt = dbus_message_iter_get_arg_type(addr subiter.iter)
-      subkind = subkindInt.DbusTypeChar
-      if subkind.kind == dtNull:
-        break
+      let subkindChar = dbus_message_iter_get_arg_type(addr subiter.iter).char
+      subkind = subkindChar.type
       values.add(subiter.unpackCurrent(native))
       if dbus_message_iter_has_next(addr subiter.iter) == 0:
         break
@@ -108,8 +104,6 @@ proc unpackCurrent*(iter: var InputIter, native: typedesc[DbusValue]): DbusValue
         break
       subiter.advanceIter()
     return DbusValue(kind: dtStruct, structValues: values)
-  else:
-    raise newException(DbusException, "nim-dbus does not support unpacking " & $kind)
 
 proc unpackCurrent*[T](iter: var InputIter, native: typedesc[T]): T =
   unpackCurrent(iter, DbusValue).asNative(native)

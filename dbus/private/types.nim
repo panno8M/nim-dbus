@@ -9,29 +9,75 @@ type Variant[T] = object
 proc newVariant*[T](val: T): Variant[T] = Variant[T](value: val)
 
 type DbusTypeChar* = enum
-  dtNull = '\0', # workaround for Nim bug #3096
-  dtArray = 'a',
-  dtBool = 'b',
-  dtDouble = 'd',
-  dtDictEntry = 'e',
-  dtSignature = 'g',
-  dtUnixFd = 'h'
-  dtInt32 = 'i',
-  dtInt16 = 'n',
-  dtObjectPath = 'o',
-  dtUint16 = 'q',
-  dtStruct = 'r',
-  dtString = 's',
-  dtUint64 = 't',
-  dtUint32 = 'u',
-  dtVariant = 'v'
-  dtInt64 = 'x',
-  dtByte = 'y'
-  dtDict = '{'
+  dtByte
+  dtBool
+  dtInt16
+  dtUint16
+  dtInt32
+  dtUint32
+  dtInt64
+  dtUint64
+  dtDouble
+  dtUnixFd
 
-const dbusScalarTypes* = {dtBool, dtDouble, dtInt32, dtInt16, dtUint16, dtUint64, dtUint32, dtInt64, dtByte}
-const dbusStringTypes* = {dtString, dtObjectPath, dtSignature}
-const dbusContainerTypes* = {dtArray, dtStruct, dtDict, dtDictEntry, dtVariant}
+  dtString
+  dtObjectPath
+  dtSignature
+
+  dtArray
+  dtStruct
+  dtVariant
+  dtDictEntry
+
+proc serialize*(kind: DbusTypeChar): char =
+  case kind
+  of dtByte: 'y'
+  of dtBool: 'b'
+  of dtInt16: 'n'
+  of dtUint16: 'q'
+  of dtInt32: 'i'
+  of dtUint32: 'u'
+  of dtInt64: 'x'
+  of dtUint64: 't'
+  of dtDouble: 'd'
+  of dtUnixFd: 'h'
+
+  of dtString: 's'
+  of dtObjectPath: 'o'
+  of dtSignature: 'g'
+
+  of dtArray: 'a'
+  of dtStruct: 'r'
+  of dtVariant: 'v'
+  of dtDictEntry: 'e'
+
+proc type*(c: char): DbusTypeChar =
+  case c
+  of 'y': dtByte
+  of 'b': dtBool
+  of 'n': dtInt16
+  of 'q': dtUint16
+  of 'i': dtInt32
+  of 'u': dtUint32
+  of 'x': dtInt64
+  of 't': dtUint64
+  of 'd': dtDouble
+  of 'h': dtUnixFd
+
+  of 's': dtString
+  of 'o': dtObjectPath
+  of 'g': dtSignature
+
+  of 'a': dtArray
+  of 'r', '{', '}': dtStruct
+  of 'v': dtVariant
+  of 'e', '(', ')': dtDictEntry
+  else:
+    raise newException(DbusException, "invalid D-Bus type char: " & $c)
+
+const dbusFixedTypes* = {dtByte..dtUnixFd}
+const dbusStringTypes* = {dtString..dtSignature}
+const dbusContainerTypes* = {dtArray..dtDictEntry}
 
 type DbusType* = ref object
   case kind*: DbusTypeChar
@@ -83,7 +129,7 @@ proc parseDbusFragment(signature: string): tuple[kind: DbusType, rest: string] =
         types.add ret.kind
       return (initStructType(types), left[1..^1])
     else:
-      let kind = signature[0].DbusTypeChar
+      let kind = signature[0].type
       return (fromScalar(kind), signature[1..^1])
 
 proc parseDbusType*(signature: string): DbusType =
@@ -104,7 +150,7 @@ proc `$`*(kind: DbusType): string =
         result.add $t
       result.add ")"
     else:
-      result = $(kind.kind.char)
+      result = $(kind.kind.serialize)
 
 proc getDbusType(native: typedesc[uint32]): DbusType =
   dtUint32
