@@ -38,11 +38,11 @@ proc append*[T](iter: ptr DbusMessageIter, x: T)
 proc initIter*(msg: Message): DbusMessageIter =
   dbus_message_iter_init_append(msg.msg, addr result)
 
-proc appendPtr(iter: ptr DbusMessageIter, typecode: DbusType, data: pointer) =
-  if dbus_message_iter_append_basic(iter, typecode.kind.serialize.cint, data) == 0:
+proc appendPtr(iter: ptr DbusMessageIter, typecode: DbusTypeChar, data: pointer) =
+  if dbus_message_iter_append_basic(iter, typecode.serialize.cint, data) == 0:
       raise newException(DbusException, "append_basic")
 
-proc appendArray(iter: ptr DbusMessageIter, sig: string, arr: openarray[DbusValue]) =
+proc appendArray(iter: ptr DbusMessageIter, sig: Signature, arr: openarray[DbusValue]) =
   var subIter: DBusMessageIter
   var subIterPtr = addr subIter
   if dbus_message_iter_open_container(iter, dtArray.serialize.cint, cstring(sig), subIterPtr) == 0:
@@ -62,10 +62,10 @@ proc appendDictEntry(iter: ptr DbusMessageIter, key, val: DbusValue) =
   if dbus_message_iter_close_container(iter, subIterPtr) == 0:
     raise newException(DbusException, "close_container")
 
-proc appendVariant(iter: ptr DbusMessageIter, sig: string, val: DbusValue) =
+proc appendVariant(iter: ptr DbusMessageIter, sig: Signature, val: DbusValue) =
   var subIter: DbusMessageIter
   var subIterPtr = addr subIter
-  if dbus_message_iter_open_container(iter, dtVariant.serialize.cint, sig, subIterPtr) == 0:
+  if dbus_message_iter_open_container(iter, dtVariant.serialize.cint, cstring(sig), subIterPtr) == 0:
     raise newException(DbusException, "open_container")
   subIterPtr.append(val)
   if dbus_message_iter_close_container(iter, subIterPtr) == 0:
@@ -93,11 +93,11 @@ proc append*(iter: ptr DbusMessageIter, x: DbusValue) =
       var str = x.getString.cstring
       iter.appendPtr(x.kind, addr str)
     of dtArray:
-      iter.appendArray($x.arrayValueType, x.arrayValue)
+      iter.appendArray(x.arrayValueType, x.arrayValue)
     of dtDictEntry:
       iter.appendDictEntry(x.dictKey, x.dictValue)
     of dtVariant:
-      iter.appendVariant($x.variantType, x.variantValue)
+      iter.appendVariant(x.variantType, x.variantValue)
     of dtStruct:
       iter.appendStruct(x.structValues)
 

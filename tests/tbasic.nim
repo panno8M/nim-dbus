@@ -70,7 +70,7 @@ test "arrays":
 
 test "variant":
   let val = testEcho(newVariant("hi"))
-  check val.variantType.kind == dtString
+  check val.variantType.type == dtString
   check val.variantValue.asNative(string) == "hi"
 
 test "struct":
@@ -86,7 +86,7 @@ test "struct":
 test "tables":
   let val = testEcho(@{"a":"b"})
   check val.kind == dtArray
-  check val.arrayValueType.kind == dtDictEntry
+  check val.arrayValueType.type == dtDictEntry
   check val.arrayValue[0].dictKey.asNative(string) == "a"
   check val.arrayValue[0].dictValue.asNative(string) == "b"
 
@@ -106,11 +106,7 @@ test "tables mixed variant":
   let var2 = newVariant(12.uint32)
   var dict = DbusValue(
     kind: dtArray,
-    arrayValueType: DbusType(
-      kind: dtDictEntry,
-      keyType: dtString,
-      valueType: dtVariant,
-    )
+    arrayValueType: Signature("{sv}"),
   )
   dict.add(("a", var1).asDbusValue)
   dict.add(("b", var2).asDbusValue)
@@ -125,19 +121,11 @@ test "tables mixed variant":
   # TODO: make a nicer syntax for this
   var outer = DbusValue(
     kind: dtArray,
-    arrayValueType: DbusType(
-      kind: dtDictEntry,
-      keyType: dtString,
-      valueType: dtVariant,
-    )
+    arrayValueType: Signature("{sv}"),
   )
   var inner = DbusValue(
     kind: dtArray,
-    arrayValueType: DbusType(
-      kind: dtDictEntry,
-      keyType: dtString,
-      valueType: dtString,
-    )
+    arrayValueType: Signature("{ss}"),
   )
   outer.add(("a", newVariant("foo")).asDbusValue)
   inner.add(("c", "d").asDbusValue)

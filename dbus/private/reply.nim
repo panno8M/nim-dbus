@@ -82,7 +82,7 @@ proc unpackCurrent*(iter: var InputIter, native: typedesc[DbusValue]): DbusValue
   of dtArray:
     var subiter = iter.subIterate()
     var values: seq[DbusValue]
-    var subkind: DbusType
+    var subkind: Signature
     while true:
       let subkindChar = dbus_message_iter_get_arg_type(addr subiter.iter).char
       subkind = subkindChar.type
@@ -90,10 +90,12 @@ proc unpackCurrent*(iter: var InputIter, native: typedesc[DbusValue]): DbusValue
       if dbus_message_iter_has_next(addr subiter.iter) == 0:
         break
       subiter.advanceIter()
-    if values.len > 0 and subkind.kind == dtDictEntry:
+    if values.len > 0 and subkind.type == dtDictEntry:
       # Hard to get these when there are no values in the current system
-      subkind.keyType = values[0].dictKey.kind
-      subkind.valueType = values[0].dictValue.kind
+      subkind = initDictEntrySignature(
+        values[0].dictKey.kind,
+        values[0].dictValue.kind,
+      )
     return DbusValue(kind: dtArray, arrayValueType: subkind, arrayValue: values)
   of dtStruct:
     var subiter = iter.subIterate()

@@ -4,7 +4,7 @@ import dbus
 proc parseXml*(content: string): XmlNode =
   xmlparser.parseXml(streams.newStringStream(content))
 
-type ArgDef* = tuple[name: string, kind: DbusType]
+type ArgDef* = tuple[name: string, kind: Signature]
 
 type MethodDef* = object
   name*: string
@@ -18,7 +18,7 @@ proc parseMethod(item: XmlNode): MethodDef =
   for attr in item.items:
     if attr.tag == "arg":
       let direction = attr.attrs["direction"]
-      let kind = parseDbusType(attr.attrs["type"])
+      let kind = Signature(attr.attrs["type"])
       let name = attr.attrs["name"]
       let def: ArgDef = (name: name, kind: kind)
       if direction == "in" or direction.len == 0:

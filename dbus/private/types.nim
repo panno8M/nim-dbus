@@ -1,4 +1,4 @@
-import strutils
+import strutils, sequtils
 
 type ObjectPath* = distinct string
 type Signature* = distinct string
@@ -69,9 +69,9 @@ proc type*(c: char): DbusTypeChar =
   of 'g': dtSignature
 
   of 'a': dtArray
-  of 'r', '{', '}': dtStruct
+  of 'r', '(', ')': dtStruct
   of 'v': dtVariant
-  of 'e', '(', ')': dtDictEntry
+  of 'e', '{', '}': dtDictEntry
   else:
     raise newException(DbusException, "invalid D-Bus type char: " & $c)
 
@@ -79,118 +79,106 @@ const dbusFixedTypes* = {dtByte..dtUnixFd}
 const dbusStringTypes* = {dtString..dtSignature}
 const dbusContainerTypes* = {dtArray..dtDictEntry}
 
-type DbusType* = ref object
-  case kind*: DbusTypeChar
+proc `==`*(a, b: Signature): bool {.borrow.}
+
+proc `type`*(s: Signature): DbusTypeChar =
+  if string(s).len == 0:
+    raise newException(DbusException, "empty D-Bus signature")
+  string(s)[0].type
+
+proc inner(s: Signature): Signature =
+  case s.type
+  of dbusFixedTypes, dbusStringTypes, dtVariant:
+    return Signature("")
   of dtArray:
-    itemType*: DbusType
-  of dtDictEntry:
-    keyType*: DbusType
-    valueType*: DbusType
-  of dtStruct:
-    itemTypes*: seq[DbusType]
-  else:
-    discard
+    return Signature(string(s)[1..^1])
+  of dtDictEntry, dtStruct:
+    return Signature(string(s)[1..^2])
 
-converter fromScalar*(ch: DbusTypeChar): DbusType =
-  # assert ch notin dbusContainerTypes
-  DbusType(kind: ch)
-
-proc initArrayType*(itemType: DbusType): DbusType =
-  DbusType(kind: dtArray, itemType: itemType)
-
-proc initDictEntryType*(keyType: DbusType, valueType: DbusType): DbusType =
-  doAssert keyType.kind notin dbusContainerTypes
-  DbusType(kind: dtDictEntry, keyType: keyType, valueType: valueType)
-
-proc initStructType*(itemTypes: seq[DbusType]): DbusType =
-  DbusType(kind: dtStruct, itemTypes: itemTypes)
-
-proc initVariantType*(variantType: DbusType): DbusType =
-  DbusType(kind: dtVariant)
-
-proc parseDbusFragment(signature: string): tuple[kind: DbusType, rest: string] =
-  case signature[0]:
-    of 'a':
-      let ret = parseDbusFragment(signature[1..^1])
-      return (initArrayType(ret.kind), ret.rest)
-    of '{':
-      let keyRet = parseDbusFragment(signature[1..^1])
-      let valueRet = parseDbusFragment(keyRet.rest)
-      assert valueRet.rest[0] == "}"[0]
-      return (initDictEntryType(keyRet.kind, valueRet.kind), valueRet.rest[1..^1])
-    of '(':
-      var left = signature[1..^1]
-      var types: seq[DbusType] = @[]
-      while left[0] != ')':
-        let ret = parseDbusFragment(left)
-        left = ret.rest
-        types.add ret.kind
-      return (initStructType(types), left[1..^1])
-    else:
-      let kind = signature[0].type
-      return (fromScalar(kind), signature[1..^1])
-
-proc parseDbusType*(signature: string): DbusType =
-  let ret = parseDbusFragment(signature)
-  if ret.rest != "":
-    raise newException(Exception, "leftover data in signature: $1" % signature)
-  return ret.kind
-
-proc `$`*(kind: DbusType): string =
-  case kind.kind:
+proc split(sig: Signature): seq[Signature] =
+  var s = string(sig)
+  var searching: seq[char]
+  var start = 0
+  for i, c in s:
+    case c.type
+    of dbusFixedTypes, dbusStringTypes, dtVariant:
+      if searching.len == 0:
+        result.add(Signature(s[start..i]))
+        start = i + 1
     of dtArray:
-      result = "a" & $kind.itemType
+      continue
     of dtDictEntry:
-      result = "{" & $kind.keyType & $kind.valueType & "}"
+      if c == '{':
+        searching.add('}')
+      elif c == '}':
+        if searching.pop() != '}':
+          raise newException(DbusException, "unmatched } in signature: " & s)
+        if searching.len == 0:
+          result.add(Signature(s[start..i]))
+          start = i + 1
     of dtStruct:
-      result = "("
-      for t in kind.itemTypes:
-        result.add $t
-      result.add ")"
-    else:
-      result = $(kind.kind.serialize)
+      if c == '(':
+        searching.add(')')
+      elif c == ')':
+        if searching.pop() != ')':
+          raise newException(DbusException, "unmatched ) in signature: " & s)
+        if searching.len == 0:
+          result.add(Signature(s[start..i]))
+          start = i + 1
+  if searching.len != 0:
+    raise newException(DbusException, "unmatched container in signature: " & s)
 
-proc getDbusType(native: typedesc[uint32]): DbusType =
+proc sons*(s: Signature): seq[Signature] =
+  case s.type
+  of dbusFixedTypes, dbusStringTypes, dtVariant:
+    result = @[]
+  of dtArray:
+    result = @[Signature(string(s)[1..^1])]
+  of dtDictEntry, dtStruct:
+    result = s.inner.split
+
+converter fromScalar*(ch: DbusTypeChar): Signature =
+  # assert ch notin dbusContainerTypes
+  Signature($ch.serialize)
+
+proc initArraySignature*(itemType: Signature): Signature =
+  Signature("a" & string(itemType))
+
+proc initDictEntrySignature*(keyType: Signature, valueType: Signature): Signature =
+  doAssert string(keyType)[0].type notin dbusContainerTypes
+  Signature("{" & string(keyType) & string(valueType) & "}")
+
+proc initStructSignature*(itemTypes: seq[Signature]): Signature =
+  Signature("(" & itemTypes.mapIt(string(it)).join("") & ")")
+
+proc sign*(native: typedesc[uint32]): Signature =
   dtUint32
 
-proc getDbusType(native: typedesc[uint16]): DbusType =
+proc sign*(native: typedesc[uint16]): Signature =
   dtUint16
 
-proc getDbusType(native: typedesc[uint8]): DbusType =
+proc sign*(native: typedesc[uint8]): Signature =
   dtByte
 
-proc getDbusType(native: typedesc[int32]): DbusType =
+proc sign*(native: typedesc[int32]): Signature =
   dtInt32
 
-proc getDbusType(native: typedesc[int16]): DbusType =
+proc sign*(native: typedesc[int16]): Signature =
   dtInt16
 
-proc getDbusType(native: typedesc[cstring]): DbusType =
+proc sign*(native: typedesc[cstring]): Signature =
+  dtString
+proc sign*(native: typedesc[string]): Signature =
   dtString
 
-proc getDbusType(native: typedesc[ObjectPath]): DbusType =
+proc sign*(native: typedesc[ObjectPath]): Signature =
   dtObjectPath
 
-proc getAnyDbusType*[T](native: typedesc[T]): DbusType
-proc getAnyDbusType*(native: typedesc[string]): DbusType
-proc getAnyDbusType*(native: typedesc[ObjectPath]): DbusType
-proc getAnyDbusType*[T](native: typedesc[seq[T]]): DbusType
-proc getAnyDbusType*[K, V](native: typedesc[(K, V)]): DbusType
+proc sign*[T](native: typedesc[Variant[T]]): Signature =
+  dtVariant
 
-proc getDbusType[T](native: typedesc[Variant[T]]): DbusType =
-  initVariantType(getAnyDbusType(T))
+proc sign*[K, V](native: typedesc[(K, V)]): Signature =
+  initDictEntrySignature(K.sign, V.sign)
 
-proc getAnyDbusType*[T](native: typedesc[T]): DbusType =
-  getDbusType(native)
-
-proc getAnyDbusType*(native: typedesc[string]): DbusType =
-  getDbusType(cstring)
-
-proc getAnyDbusType*(native: typedesc[ObjectPath]): DbusType =
-  getDbusType(ObjectPath)
-
-proc getAnyDbusType*[K, V](native: typedesc[(K, V)]): DbusType =
-  initDictEntryType(getAnyDbusType(K), getAnyDbusType(V))
-
-proc getAnyDbusType*[T](native: typedesc[seq[T]]): DbusType =
-  initArrayType(getAnyDbusType(T))
+proc sign*[T](native: typedesc[seq[T]]): Signature =
+  initArraySignature(T.sign)

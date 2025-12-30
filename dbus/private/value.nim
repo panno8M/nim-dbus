@@ -1,12 +1,10 @@
-import sequtils
-
 type
   FD* = cint
 
   DbusValue* = ref object
     case kind*: DbusTypeChar
     of dtArray:
-      arrayValueType*: DbusType
+      arrayValueType*: Signature
       arrayValue*: seq[DbusValue]
     of dtBool:
       boolValue*: bool
@@ -39,14 +37,14 @@ type
     of dtByte:
       byteValue*: uint8
     of dtVariant:
-      variantType*: DbusType
+      variantType*: Signature
       variantValue*: DbusValue
 
 proc `$`*(val: DbusValue): string =
   result.add("<DbusValue " & $val.kind & " ")
   case val.kind
   of dtArray:
-    result.add($val.arrayValueType & ' ' & $val.arrayValue)
+    result.add(string(val.arrayValueType) & ' ' & $val.arrayValue)
   of dtBool:
     result.add($val.boolValue)
   of dtDictEntry:
@@ -78,10 +76,8 @@ proc `$`*(val: DbusValue): string =
   of dtByte:
     result.add($val.byteValue)
   of dtVariant:
-    result.add($val.variantType & ' ' & $val.variantValue)
+    result.add(string(val.variantType) & ' ' & $val.variantValue)
   result.add('>')
-
-type DbusNativePrimitive = bool | float64 | int32 | int16 | uint16 | uint64 | uint32 | int64 | uint8
 
 proc getPrimitive(val: DbusValue): pointer =
   case val.kind
@@ -130,9 +126,6 @@ proc createScalarDbusValue(kind: DbusTypeChar): tuple[value: DbusValue, scalarPt
   var value = DBusValue(kind: kind)
   (value, getPrimitive(value))
 
-proc createDictEntryDbusValue(key, val: DbusValue): DbusValue =
-  DbusValue(kind: dtDictEntry, dictKey: key, dictValue: val)
-
 proc asDbusValue*(val: bool): DbusValue =
   DbusValue(kind: dtBool, boolValue: val)
 
@@ -172,29 +165,23 @@ proc asDbusValue*(val: Signature): DbusValue =
 proc asDbusValue*(val: DbusValue): DbusValue =
   val
 
-proc getDbusType*(val: DbusValue): DbusType =
+proc sign*(val: DbusValue): Signature =
   case val.kind
   of dbusFixedTypes:
     return val.kind
   of dbusStringTypes:
     return val.kind
   of dtArray:
-    return DbusType(kind: dtArray, itemType: val.arrayValueType)
+    return initArraySignature(val.arrayValueType)
   of dtDictEntry:
-    return DbusType(kind: dtDictEntry,
-                    keyType: getDbusType(val.dictKey),
-                    valueType: getDbusType(val.dictValue))
+    return initDictEntrySignature(val.dictKey.sign, val.dictValue.sign)
   of dtStruct:
-    return DbusType(kind: dtStruct,
-                    itemTypes: val.structValues.mapIt(getDbusType(it)))
+    return initStructSignature(val.structValues.mapIt(it.sign))
   of dtVariant:
-    return DbusType(kind: dtVariant)
-
-proc getAnyDbusType*(val: DbusValue): DbusType =
-  getDbusType(val)
+    return val.kind
 
 proc asDbusValue*[T](val: seq[T]): DbusValue =
-  result = DbusValue(kind: dtArray, arrayValueType: getAnyDbusType(T))
+  result = DbusValue(kind: dtArray, arrayValueType: T.sign)
   for x in val:
     result.arrayValue.add x.asDbusValue
 
@@ -204,11 +191,11 @@ proc asDbusValue*[K, V](val: (K, V)): DbusValue =
     dictValue: asDbusValue(val[1]))
 
 proc asDbusValue*(val: Variant[DbusValue]): DbusValue =
-  DbusValue(kind: dtVariant, variantType: getDbusType(val.value),
+  DbusValue(kind: dtVariant, variantType: val.value.sign,
             variantValue: val.value)
 
 proc asDbusValue*[T](val: Variant[T]): DbusValue =
-  DbusValue(kind: dtVariant, variantType: getAnyDbusType(T),
+  DbusValue(kind: dtVariant, variantType: T.sign,
             variantValue: asDbusValue(val.value))
 
 proc asNative*(value: DbusValue, native: typedesc[bool]): bool =
