@@ -1,4 +1,3 @@
-import tables
 import sequtils
 
 type

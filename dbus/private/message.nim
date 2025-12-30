@@ -6,7 +6,7 @@ proc makeSignal*(path: string, iface: string, name: string): Message =
   result.msg = dbus_message_new_signal(path, iface, name)
 
 proc makeCall*(uniqueName: string, path: ObjectPath, iface: string, name: string): Message =
-  result.msg = dbus_message_new_method_call(uniqueName, path.string, iface, name)
+  result.msg = dbus_message_new_method_call(uniqueName, path.string.cstring, iface, name)
 
 proc sendMessage*(conn: Bus, msg: var Message): dbus_uint32_t {.discardable.} =
   var serial: dbus_uint32_t

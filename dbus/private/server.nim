@@ -22,7 +22,7 @@ proc registerObject(bus: Bus, path: ObjectPath,
   vtable.message_function = messageFunc
   vtable.unregister_function = unregisterFunc
 
-  let ok = dbus_connection_try_register_object_path(bus.conn, path.string, addr vtable, userData, addr err)
+  let ok = dbus_connection_try_register_object_path(bus.conn, path.string.cstring, addr vtable, userData, addr err)
 
   if ok == 0:
     defer: dbus_error_free(addr err)

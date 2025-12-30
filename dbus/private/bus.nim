@@ -2,7 +2,7 @@ export dbus.lowlevel
 
 converter toBool(x: dbus_bool_t): bool = x != 0
 
-type DbusException* = object of Exception
+type DbusException* = object of CatchableError
 
 type DbusRemoteException* = object of DbusException
 

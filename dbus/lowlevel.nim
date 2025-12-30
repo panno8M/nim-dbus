@@ -387,7 +387,7 @@ type
 
 type 
   DBusBasicValue* {.union.} = object
-    bytes*: array[8, cuchar]  #*< as 8 individual bytes 
+    bytes*: array[8, cchar]  #*< as 8 individual bytes 
     i16*: dbus_int16_t        #*< as int16 
     u16*: dbus_uint16_t       #*< as int16 
     i32*: dbus_int32_t        #*< as int32 
@@ -397,7 +397,7 @@ type
     u64*: dbus_uint64_t       #*< as int64 
     eight*: DBus8ByteStruct   #*< as 8-byte struct 
     dbl*: cdouble             #*< as double 
-    byt*: cuchar              #*< as byte 
+    byt*: cchar              #*< as byte 
     str*: cstring             #*< as char* (string, object path or signature) 
     fd*: cint                 #*< as Unix file descriptor 
   
@@ -934,11 +934,11 @@ proc dbus_address_unescape_value*(value: cstring; error: ptr DBusError): cstring
 #  @{
 # 
 
-proc dbus_malloc*(bytes: csize): pointer {.cdecl, importc: "dbus_malloc", 
+proc dbus_malloc*(bytes: csize_t): pointer {.cdecl, importc: "dbus_malloc", 
     dynlib: libdbus.}
-proc dbus_malloc0*(bytes: csize): pointer {.cdecl, importc: "dbus_malloc0", 
+proc dbus_malloc0*(bytes: csize_t): pointer {.cdecl, importc: "dbus_malloc0", 
     dynlib: libdbus.}
-proc dbus_realloc*(memory: pointer; bytes: csize): pointer {.cdecl, 
+proc dbus_realloc*(memory: pointer; bytes: csize_t): pointer {.cdecl, 
     importc: "dbus_realloc", dynlib: libdbus.}
 proc dbus_free*(memory: pointer) {.cdecl, importc: "dbus_free", dynlib: libdbus.}
 proc dbus_free_string_array*(str_array: cstringArray) {.cdecl, 
