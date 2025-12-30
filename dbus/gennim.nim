@@ -1,6 +1,6 @@
 import dbus
 import dbus/introspect
-import strutils, sequtils, future
+import strutils, sequtils, sugar
 
 proc genType*(kind: DbusType): string =
   case kind.kind:
