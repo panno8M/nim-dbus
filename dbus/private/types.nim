@@ -8,91 +8,91 @@ type Variant[T] = object
 
 proc newVariant*[T](val: T): Variant[T] = Variant[T](value: val)
 
-type DbusTypeChar* = enum
-  dtByte
-  dtBool
-  dtInt16
-  dtUint16
-  dtInt32
-  dtUint32
-  dtInt64
-  dtUint64
-  dtDouble
-  dtUnixFd
+type SigCode* = enum
+  scByte
+  scBool
+  scInt16
+  scUint16
+  scInt32
+  scUint32
+  scInt64
+  scUint64
+  scDouble
+  scUnixFd
 
-  dtString
-  dtObjectPath
-  dtSignature
+  scString
+  scObjectPath
+  scSignature
 
-  dtArray
-  dtStruct
-  dtVariant
-  dtDictEntry
+  scArray
+  scStruct
+  scVariant
+  scDictEntry
 
-proc serialize*(kind: DbusTypeChar): char =
+proc serialize*(kind: SigCode): char =
   case kind
-  of dtByte: 'y'
-  of dtBool: 'b'
-  of dtInt16: 'n'
-  of dtUint16: 'q'
-  of dtInt32: 'i'
-  of dtUint32: 'u'
-  of dtInt64: 'x'
-  of dtUint64: 't'
-  of dtDouble: 'd'
-  of dtUnixFd: 'h'
+  of scByte: 'y'
+  of scBool: 'b'
+  of scInt16: 'n'
+  of scUint16: 'q'
+  of scInt32: 'i'
+  of scUint32: 'u'
+  of scInt64: 'x'
+  of scUint64: 't'
+  of scDouble: 'd'
+  of scUnixFd: 'h'
 
-  of dtString: 's'
-  of dtObjectPath: 'o'
-  of dtSignature: 'g'
+  of scString: 's'
+  of scObjectPath: 'o'
+  of scSignature: 'g'
 
-  of dtArray: 'a'
-  of dtStruct: 'r'
-  of dtVariant: 'v'
-  of dtDictEntry: 'e'
+  of scArray: 'a'
+  of scStruct: 'r'
+  of scVariant: 'v'
+  of scDictEntry: 'e'
 
-proc type*(c: char): DbusTypeChar =
+proc code*(c: char): SigCode =
   case c
-  of 'y': dtByte
-  of 'b': dtBool
-  of 'n': dtInt16
-  of 'q': dtUint16
-  of 'i': dtInt32
-  of 'u': dtUint32
-  of 'x': dtInt64
-  of 't': dtUint64
-  of 'd': dtDouble
-  of 'h': dtUnixFd
+  of 'y': scByte
+  of 'b': scBool
+  of 'n': scInt16
+  of 'q': scUint16
+  of 'i': scInt32
+  of 'u': scUint32
+  of 'x': scInt64
+  of 't': scUint64
+  of 'd': scDouble
+  of 'h': scUnixFd
 
-  of 's': dtString
-  of 'o': dtObjectPath
-  of 'g': dtSignature
+  of 's': scString
+  of 'o': scObjectPath
+  of 'g': scSignature
 
-  of 'a': dtArray
-  of 'r', '(', ')': dtStruct
-  of 'v': dtVariant
-  of 'e', '{', '}': dtDictEntry
+  of 'a': scArray
+  of 'r', '(', ')': scStruct
+  of 'v': scVariant
+  of 'e', '{', '}': scDictEntry
   else:
     raise newException(DbusException, "invalid D-Bus type char: " & $c)
 
-const dbusFixedTypes* = {dtByte..dtUnixFd}
-const dbusStringTypes* = {dtString..dtSignature}
-const dbusContainerTypes* = {dtArray..dtDictEntry}
+const dbusFixedTypes* = {scByte..scUnixFd}
+const dbusStringTypes* = {scString..scSignature}
+const dbusContainerTypes* = {scArray..scDictEntry}
 
 proc `==`*(a, b: Signature): bool {.borrow.}
 
-proc `type`*(s: Signature): DbusTypeChar =
+proc code*(s: Signature): SigCode =
   if string(s).len == 0:
     raise newException(DbusException, "empty D-Bus signature")
-  string(s)[0].type
+  string(s)[0].code
 
 proc inner(s: Signature): Signature =
-  case s.type
-  of dbusFixedTypes, dbusStringTypes, dtVariant:
+  case s.code
+  of dbusFixedTypes, dbusStringTypes, scVariant:
     return Signature("")
-  of dtArray:
+  of scArray:
     return Signature(string(s)[1..^1])
-  of dtDictEntry, dtStruct:
+  of scDictEntry, scStruct:
     return Signature(string(s)[1..^2])
 
 proc split(sig: Signature): seq[Signature] =
@@ -100,14 +100,14 @@ proc split(sig: Signature): seq[Signature] =
   var searching: seq[char]
   var start = 0
   for i, c in s:
-    case c.type
-    of dbusFixedTypes, dbusStringTypes, dtVariant:
+    case c.code
+    of dbusFixedTypes, dbusStringTypes, scVariant:
       if searching.len == 0:
         result.add(Signature(s[start..i]))
         start = i + 1
-    of dtArray:
+    of scArray:
       continue
-    of dtDictEntry:
+    of scDictEntry:
       if c == '{':
         searching.add('}')
       elif c == '}':
@@ -116,7 +116,7 @@ proc split(sig: Signature): seq[Signature] =
         if searching.len == 0:
           result.add(Signature(s[start..i]))
           start = i + 1
-    of dtStruct:
+    of scStruct:
       if c == '(':
         searching.add(')')
       elif c == ')':
@@ -129,15 +129,15 @@ proc split(sig: Signature): seq[Signature] =
     raise newException(DbusException, "unmatched container in signature: " & s)
 
 proc sons*(s: Signature): seq[Signature] =
-  case s.type
-  of dbusFixedTypes, dbusStringTypes, dtVariant:
+  case s.code
+  of dbusFixedTypes, dbusStringTypes, scVariant:
     result = @[]
-  of dtArray:
+  of scArray:
     result = @[Signature(string(s)[1..^1])]
-  of dtDictEntry, dtStruct:
+  of scDictEntry, scStruct:
     result = s.inner.split
 
-converter fromScalar*(ch: DbusTypeChar): Signature =
+converter fromScalar*(ch: SigCode): Signature =
   # assert ch notin dbusContainerTypes
   Signature($ch.serialize)
 
@@ -145,37 +145,37 @@ proc initArraySignature*(itemType: Signature): Signature =
   Signature("a" & string(itemType))
 
 proc initDictEntrySignature*(keyType: Signature, valueType: Signature): Signature =
-  doAssert string(keyType)[0].type notin dbusContainerTypes
+  doAssert string(keyType)[0].code notin dbusContainerTypes
   Signature("{" & string(keyType) & string(valueType) & "}")
 
 proc initStructSignature*(itemTypes: seq[Signature]): Signature =
   Signature("(" & itemTypes.mapIt(string(it)).join("") & ")")
 
 proc sign*(native: typedesc[uint32]): Signature =
-  dtUint32
+  scUint32
 
 proc sign*(native: typedesc[uint16]): Signature =
-  dtUint16
+  scUint16
 
 proc sign*(native: typedesc[uint8]): Signature =
-  dtByte
+  scByte
 
 proc sign*(native: typedesc[int32]): Signature =
-  dtInt32
+  scInt32
 
 proc sign*(native: typedesc[int16]): Signature =
-  dtInt16
+  scInt16
 
 proc sign*(native: typedesc[cstring]): Signature =
-  dtString
+  scString
 proc sign*(native: typedesc[string]): Signature =
-  dtString
+  scString
 
 proc sign*(native: typedesc[ObjectPath]): Signature =
-  dtObjectPath
+  scObjectPath
 
 proc sign*[T](native: typedesc[Variant[T]]): Signature =
-  dtVariant
+  scVariant
 
 proc sign*[K, V](native: typedesc[(K, V)]): Signature =
   initDictEntrySignature(K.sign, V.sign)

@@ -59,34 +59,34 @@ test "basic":
 
 test "int":
   let val = testEcho(uint32(6))
-  check val.kind == dtUint32
+  check val.kind == scUint32
   check val.asNative(uint32) == 6
 
 test "arrays":
   let val = testEcho(@["a", "b"])
-  check val.kind == dtArray
+  check val.kind == scArray
   check val.arrayValue[0].asNative(string) == "a"
   check val.arrayValue[1].asNative(string) == "b"
 
 test "variant":
   let val = testEcho(newVariant("hi"))
-  check val.variantType.type == dtString
+  check val.variantType.code == scString
   check val.variantValue.asNative(string) == "hi"
 
 test "struct":
-  let val = testEcho(DbusValue(kind: dtStruct, structValues: @[
+  let val = testEcho(DbusValue(kind: scStruct, structValues: @[
     "hi".asDbusValue(),
     uint32(2).asDbusValue(),
   ]))
-  check val.kind == dtStruct
+  check val.kind == scStruct
   check val.structValues.len == 2
   check val.structValues[0].asNative(string) == "hi"
   check val.structValues[1].asNative(uint32) == 2
 
 test "tables":
   let val = testEcho(@{"a":"b"})
-  check val.kind == dtArray
-  check val.arrayValueType.type == dtDictEntry
+  check val.kind == scArray
+  check val.arrayValueType.code == scDictEntry
   check val.arrayValue[0].dictKey.asNative(string) == "a"
   check val.arrayValue[0].dictValue.asNative(string) == "b"
 
@@ -96,7 +96,7 @@ test "tables nested":
       "c":"d"
     })
   })
-  check val.kind == dtArray
+  check val.kind == scArray
   check val.arrayValue[0].dictKey.asNative(string) == "a"
   check val.arrayValue[0].dictValue.variantValue.arrayValue[0].dictKey.asNative(string) == "c"
   check val.arrayValue[0].dictValue.variantValue.arrayValue[0].dictValue.asNative(string) == "d"
@@ -105,13 +105,13 @@ test "tables mixed variant":
   let var1 = newVariant("foo")
   let var2 = newVariant(12.uint32)
   var dict = DbusValue(
-    kind: dtArray,
+    kind: scArray,
     arrayValueType: Signature("{sv}"),
   )
   dict.add(("a", var1).asDbusValue)
   dict.add(("b", var2).asDbusValue)
   let val = testEcho(dict)
-  check val.kind == dtArray
+  check val.kind == scArray
   check val.arrayValue[0].dictKey.asNative(string) == "a"
   check val.arrayValue[0].dictValue.variantValue.asNative(string) == "foo"
   check val.arrayValue[1].dictKey.asNative(string) == "b"
@@ -120,18 +120,18 @@ test "tables mixed variant":
 test "tables mixed variant":
   # TODO: make a nicer syntax for this
   var outer = DbusValue(
-    kind: dtArray,
+    kind: scArray,
     arrayValueType: Signature("{sv}"),
   )
   var inner = DbusValue(
-    kind: dtArray,
+    kind: scArray,
     arrayValueType: Signature("{ss}"),
   )
   outer.add(("a", newVariant("foo")).asDbusValue)
   inner.add(("c", "d").asDbusValue)
   outer.add(("b", newVariant(inner)).asDbusValue)
   let val = testEcho(outer)
-  check val.kind == dtArray
+  check val.kind == scArray
   check val.arrayValue[0].dictKey.asNative(string) == "a"
   check val.arrayValue[0].dictValue.variantValue.asNative(string) == "foo"
   check val.arrayValue[1].dictKey.asNative(string) == "b"

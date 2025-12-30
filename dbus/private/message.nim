@@ -38,14 +38,14 @@ proc append*[T](iter: ptr DbusMessageIter, x: T)
 proc initIter*(msg: Message): DbusMessageIter =
   dbus_message_iter_init_append(msg.msg, addr result)
 
-proc appendPtr(iter: ptr DbusMessageIter, typecode: DbusTypeChar, data: pointer) =
+proc appendPtr(iter: ptr DbusMessageIter, typecode: SigCode, data: pointer) =
   if dbus_message_iter_append_basic(iter, typecode.serialize.cint, data) == 0:
       raise newException(DbusException, "append_basic")
 
 proc appendArray(iter: ptr DbusMessageIter, sig: Signature, arr: openarray[DbusValue]) =
   var subIter: DBusMessageIter
   var subIterPtr = addr subIter
-  if dbus_message_iter_open_container(iter, dtArray.serialize.cint, cstring(sig), subIterPtr) == 0:
+  if dbus_message_iter_open_container(iter, scArray.serialize.cint, cstring(sig), subIterPtr) == 0:
     raise newException(DbusException, "open_container")
   for item in arr:
     subIterPtr.append(item)
@@ -55,7 +55,7 @@ proc appendArray(iter: ptr DbusMessageIter, sig: Signature, arr: openarray[DbusV
 proc appendDictEntry(iter: ptr DbusMessageIter, key, val: DbusValue) =
   var subIter: DbusMessageIter
   var subIterPtr = addr subIter
-  if dbus_message_iter_open_container(iter, dtDictEntry.serialize.cint, nil, subIterPtr) == 0:
+  if dbus_message_iter_open_container(iter, scDictEntry.serialize.cint, nil, subIterPtr) == 0:
     raise newException(DbusException, "open_container")
   subIterPtr.append(key)
   subIterPtr.append(val)
@@ -65,7 +65,7 @@ proc appendDictEntry(iter: ptr DbusMessageIter, key, val: DbusValue) =
 proc appendVariant(iter: ptr DbusMessageIter, sig: Signature, val: DbusValue) =
   var subIter: DbusMessageIter
   var subIterPtr = addr subIter
-  if dbus_message_iter_open_container(iter, dtVariant.serialize.cint, cstring(sig), subIterPtr) == 0:
+  if dbus_message_iter_open_container(iter, scVariant.serialize.cint, cstring(sig), subIterPtr) == 0:
     raise newException(DbusException, "open_container")
   subIterPtr.append(val)
   if dbus_message_iter_close_container(iter, subIterPtr) == 0:
@@ -74,7 +74,7 @@ proc appendVariant(iter: ptr DbusMessageIter, sig: Signature, val: DbusValue) =
 proc appendStruct(iter: ptr DbusMessageIter, arr: openarray[DbusValue]) =
   var subIter: DbusMessageIter
   var subIterPtr = addr subIter
-  if dbus_message_iter_open_container(iter, dtStruct.serialize.cint, nil, subIterPtr) == 0:
+  if dbus_message_iter_open_container(iter, scStruct.serialize.cint, nil, subIterPtr) == 0:
     raise newException(DbusException, "open_container")
   for item in arr:
     subIterPtr.append(item)
@@ -83,22 +83,22 @@ proc appendStruct(iter: ptr DbusMessageIter, arr: openarray[DbusValue]) =
 
 proc append*(iter: ptr DbusMessageIter, x: DbusValue) =
   case x.kind:
-    of dtBool:
+    of scBool:
       let val = x.boolValue.uint32
       iter.appendPtr(x.kind, addr val)
-    of dbusFixedTypes - {dtBool}:
+    of dbusFixedTypes - {scBool}:
       iter.appendPtr(x.kind, x.getPrimitive)
     of dbusStringTypes:
       # dbus_message_iter_append_basic copies its argument, so this is safe
       var str = x.getString.cstring
       iter.appendPtr(x.kind, addr str)
-    of dtArray:
+    of scArray:
       iter.appendArray(x.arrayValueType, x.arrayValue)
-    of dtDictEntry:
+    of scDictEntry:
       iter.appendDictEntry(x.dictKey, x.dictValue)
-    of dtVariant:
+    of scVariant:
       iter.appendVariant(x.variantType, x.variantValue)
-    of dtStruct:
+    of scStruct:
       iter.appendStruct(x.structValues)
 
 # anything convertible to DbusValue

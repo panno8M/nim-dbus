@@ -4,37 +4,37 @@ import strutils, sequtils, future
 
 proc genType*(kind: DbusType): string =
   case kind.kind:
-    of dtArray:
+    of scArray:
       return "seq[" & genType(kind.itemType) & "]"
-    of dtStruct:
+    of scStruct:
       return "TableRef[" & genType(kind.keyType) & ", " & genType(kind.valueType) & "]"
-    of dtBool:
+    of scBool:
       return "bool"
-    of dtDouble:
+    of scDouble:
       return "float64"
-    of dtSignature:
+    of scSignature:
       return "DbusSignature"
-    of dtUnixFd:
+    of scUnixFd:
       return "FdPass"
-    of dtInt32:
+    of scInt32:
       return "int32"
-    of dtInt16:
+    of scInt16:
       return "int16"
-    of dtObjectPath:
+    of scObjectPath:
       return "ObjectPath"
-    of dtUint16:
+    of scUint16:
       return "uint16"
-    of dtString:
+    of scString:
       return "string"
-    of dtUint64:
+    of scUint64:
       return "uint64"
-    of dtUint32:
+    of scUint32:
       return "uint32"
-    of dtVariant:
+    of scVariant:
       return "DbusValue"
-    of dtInt64:
+    of scInt64:
       return "int64"
-    of dtByte:
+    of scByte:
       return "byte"
     else:
       raise newException(DbusException, "unsupported type")

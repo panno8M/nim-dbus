@@ -58,7 +58,7 @@ proc subIterate*(iter: var InputIter): InputIter =
   dbus_message_iter_recurse(addr iter.iter, addr result.iter)
 
 proc unpackCurrent*(iter: var InputIter, native: typedesc[DbusValue]): DbusValue =
-  let kind = dbus_message_iter_get_arg_type(addr iter.iter).char.type
+  let kind = dbus_message_iter_get_arg_type(addr iter.iter).char.code
   case kind:
   of dbusFixedTypes:
     let (value, scalarPtr) = createScalarDbusValue(kind)
@@ -68,36 +68,36 @@ proc unpackCurrent*(iter: var InputIter, native: typedesc[DbusValue]): DbusValue
     var s: cstring
     dbus_message_iter_get_basic(addr iter.iter, addr s)
     return createStringDbusValue(kind, $s)
-  of dtVariant:
+  of scVariant:
     var subiter = iter.subIterate()
     let subvalue = subiter.unpackCurrent(native)
-    return DbusValue(kind: dtVariant, variantType: subvalue.kind, variantValue: subvalue)
-  of dtDictEntry:
+    return DbusValue(kind: scVariant, variantType: subvalue.kind, variantValue: subvalue)
+  of scDictEntry:
     var subiter = iter.subIterate()
     let key = subiter.unpackCurrent(DbusValue)
     subiter.advanceIter()
     let val = subiter.unpackCurrent(DbusValue)
     subiter.ensureEnd()
-    return DbusValue(kind: dtDictEntry, dictKey: key, dictValue: val)
-  of dtArray:
+    return DbusValue(kind: scDictEntry, dictKey: key, dictValue: val)
+  of scArray:
     var subiter = iter.subIterate()
     var values: seq[DbusValue]
     var subkind: Signature
     while true:
       let subkindChar = dbus_message_iter_get_arg_type(addr subiter.iter).char
-      subkind = subkindChar.type
+      subkind = subkindChar.code
       values.add(subiter.unpackCurrent(native))
       if dbus_message_iter_has_next(addr subiter.iter) == 0:
         break
       subiter.advanceIter()
-    if values.len > 0 and subkind.type == dtDictEntry:
+    if values.len > 0 and subkind.code == scDictEntry:
       # Hard to get these when there are no values in the current system
       subkind = initDictEntrySignature(
         values[0].dictKey.kind,
         values[0].dictValue.kind,
       )
-    return DbusValue(kind: dtArray, arrayValueType: subkind, arrayValue: values)
-  of dtStruct:
+    return DbusValue(kind: scArray, arrayValueType: subkind, arrayValue: values)
+  of scStruct:
     var subiter = iter.subIterate()
     var values:seq[DbusValue]
     while true:
@@ -105,7 +105,7 @@ proc unpackCurrent*(iter: var InputIter, native: typedesc[DbusValue]): DbusValue
       if dbus_message_iter_has_next(addr subiter.iter) == 0:
         break
       subiter.advanceIter()
-    return DbusValue(kind: dtStruct, structValues: values)
+    return DbusValue(kind: scStruct, structValues: values)
 
 proc unpackCurrent*[T](iter: var InputIter, native: typedesc[T]): T =
   unpackCurrent(iter, DbusValue).asNative(native)

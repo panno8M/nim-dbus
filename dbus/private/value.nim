@@ -2,165 +2,165 @@ type
   FD* = cint
 
   DbusValue* = ref object
-    case kind*: DbusTypeChar
-    of dtArray:
+    case kind*: SigCode
+    of scArray:
       arrayValueType*: Signature
       arrayValue*: seq[DbusValue]
-    of dtBool:
+    of scBool:
       boolValue*: bool
-    of dtDictEntry:
+    of scDictEntry:
       dictKey*, dictValue*: DbusValue
-    of dtDouble:
+    of scDouble:
       doubleValue*: float64
-    of dtSignature:
+    of scSignature:
       signatureValue*: Signature
-    of dtUnixFd:
+    of scUnixFd:
       fdValue*: FD
-    of dtInt32:
+    of scInt32:
       int32Value*: int32
-    of dtInt16:
+    of scInt16:
       int16Value*: int16
-    of dtObjectPath:
+    of scObjectPath:
       objectPathValue*: ObjectPath
-    of dtUint16:
+    of scUint16:
       uint16Value*: uint16
-    of dtString:
+    of scString:
       stringValue*: string
-    of dtStruct:
+    of scStruct:
       structValues*: seq[DbusValue]
-    of dtUint64:
+    of scUint64:
       uint64Value*: uint64
-    of dtUint32:
+    of scUint32:
       uint32Value*: uint32
-    of dtInt64:
+    of scInt64:
       int64Value*: int64
-    of dtByte:
+    of scByte:
       byteValue*: uint8
-    of dtVariant:
+    of scVariant:
       variantType*: Signature
       variantValue*: DbusValue
 
 proc `$`*(val: DbusValue): string =
   result.add("<DbusValue " & $val.kind & " ")
   case val.kind
-  of dtArray:
+  of scArray:
     result.add(string(val.arrayValueType) & ' ' & $val.arrayValue)
-  of dtBool:
+  of scBool:
     result.add($val.boolValue)
-  of dtDictEntry:
+  of scDictEntry:
     result.add($val.dictKey & ' ' & $val.dictValue)
-  of dtDouble:
+  of scDouble:
     result.add($val.doubleValue)
-  of dtSignature:
+  of scSignature:
     result.add(val.signatureValue.string)
-  of dtUnixFd:
+  of scUnixFd:
     result.add($val.fdValue)
-  of dtInt32:
+  of scInt32:
     result.add($val.int32Value)
-  of dtInt16:
+  of scInt16:
     result.add($val.int16Value)
-  of dtObjectPath:
+  of scObjectPath:
     result.add(val.objectPathValue.string)
-  of dtUint16:
+  of scUint16:
     result.add($val.uint16Value)
-  of dtString:
+  of scString:
     result.add(val.stringValue)
-  of dtStruct:
+  of scStruct:
     result.add($val.structValues)
-  of dtUint64:
+  of scUint64:
     result.add($val.uint64Value)
-  of dtUint32:
+  of scUint32:
     result.add($val.uint32Value.uint64)
-  of dtInt64:
+  of scInt64:
     result.add($val.int64Value)
-  of dtByte:
+  of scByte:
     result.add($val.byteValue)
-  of dtVariant:
+  of scVariant:
     result.add(string(val.variantType) & ' ' & $val.variantValue)
   result.add('>')
 
 proc getPrimitive(val: DbusValue): pointer =
   case val.kind
-  of dtDouble:
+  of scDouble:
     return addr val.doubleValue
-  of dtInt32:
+  of scInt32:
     return addr val.int32Value
-  of dtInt16:
+  of scInt16:
     return addr val.int16Value
-  of dtUint16:
+  of scUint16:
     return addr val.uint16Value
-  of dtUint64:
+  of scUint64:
     return addr val.uint64Value
-  of dtUint32:
+  of scUint32:
     return addr val.uint32Value
-  of dtInt64:
+  of scInt64:
     return addr val.int64Value
-  of dtByte:
+  of scByte:
     return addr val.byteValue
   else:
     raise newException(ValueError, "value is not primitive")
 
 proc getString(val: DbusValue): var string =
   case val.kind
-  of dtString:
+  of scString:
     return val.stringValue
-  of dtSignature:
+  of scSignature:
     return val.signatureValue.string
-  of dtObjectPath:
+  of scObjectPath:
     return val.objectPathValue.string
   else:
     raise newException(ValueError, "value is not string")
 
-proc createStringDbusValue(kind: DbusTypeChar, val: string): DbusValue =
+proc createStringDbusValue(kind: SigCode, val: string): DbusValue =
   case kind
-  of dtString:
+  of scString:
     result = DbusValue(kind: kind, stringValue: val)
-  of dtSignature:
+  of scSignature:
     result = DbusValue(kind: kind, signatureValue: val.Signature)
-  of dtObjectPath:
+  of scObjectPath:
     result = DbusValue(kind: kind, objectPathValue: val.ObjectPath)
   else:
     raise newException(ValueError, "value is not string")
 
-proc createScalarDbusValue(kind: DbusTypeChar): tuple[value: DbusValue, scalarPtr: pointer] =
+proc createScalarDbusValue(kind: SigCode): tuple[value: DbusValue, scalarPtr: pointer] =
   var value = DBusValue(kind: kind)
   (value, getPrimitive(value))
 
 proc asDbusValue*(val: bool): DbusValue =
-  DbusValue(kind: dtBool, boolValue: val)
+  DbusValue(kind: scBool, boolValue: val)
 
 proc asDbusValue*(val: float64): DbusValue =
-  DbusValue(kind: dtDouble, doubleValue: val)
+  DbusValue(kind: scDouble, doubleValue: val)
 
 proc asDbusValue*(val: int16): DbusValue =
-  DbusValue(kind: dtInt16, int16Value: val)
+  DbusValue(kind: scInt16, int16Value: val)
 
 proc asDbusValue*(val: int32): DbusValue =
-  DbusValue(kind: dtInt32, int32Value: val)
+  DbusValue(kind: scInt32, int32Value: val)
 
 proc asDbusValue*(val: int64): DbusValue =
-  DbusValue(kind: dtInt64, int64Value: val)
+  DbusValue(kind: scInt64, int64Value: val)
 
 proc asDbusValue*(val: uint16): DbusValue =
-  DbusValue(kind: dtUint16, uint16Value: val)
+  DbusValue(kind: scUint16, uint16Value: val)
 
 proc asDbusValue*(val: uint32): DbusValue =
-  DbusValue(kind: dtUint32, uint32Value: val)
+  DbusValue(kind: scUint32, uint32Value: val)
 
 proc asDbusValue*(val: uint64): DbusValue =
-  DbusValue(kind: dtUint64, uint64Value: val)
+  DbusValue(kind: scUint64, uint64Value: val)
 
 proc asDbusValue*(val: uint8): DbusValue =
-  DbusValue(kind: dtByte, byteValue: val)
+  DbusValue(kind: scByte, byteValue: val)
 
 proc asDbusValue*(val: string): DbusValue =
-  DbusValue(kind: dtString, stringValue: val)
+  DbusValue(kind: scString, stringValue: val)
 
 proc asDbusValue*(val: ObjectPath): DbusValue =
-  DbusValue(kind: dtObjectPath, objectPathValue: val)
+  DbusValue(kind: scObjectPath, objectPathValue: val)
 
 proc asDbusValue*(val: Signature): DbusValue =
-  DbusValue(kind: dtSignature, signatureValue: val)
+  DbusValue(kind: scSignature, signatureValue: val)
 
 proc asDbusValue*(val: DbusValue): DbusValue =
   val
@@ -171,31 +171,31 @@ proc sign*(val: DbusValue): Signature =
     return val.kind
   of dbusStringTypes:
     return val.kind
-  of dtArray:
+  of scArray:
     return initArraySignature(val.arrayValueType)
-  of dtDictEntry:
+  of scDictEntry:
     return initDictEntrySignature(val.dictKey.sign, val.dictValue.sign)
-  of dtStruct:
+  of scStruct:
     return initStructSignature(val.structValues.mapIt(it.sign))
-  of dtVariant:
+  of scVariant:
     return val.kind
 
 proc asDbusValue*[T](val: seq[T]): DbusValue =
-  result = DbusValue(kind: dtArray, arrayValueType: T.sign)
+  result = DbusValue(kind: scArray, arrayValueType: T.sign)
   for x in val:
     result.arrayValue.add x.asDbusValue
 
 proc asDbusValue*[K, V](val: (K, V)): DbusValue =
-  result = DbusValue(kind: dtDictEntry,
+  result = DbusValue(kind: scDictEntry,
     dictKey: asDbusValue(val[0]),
     dictValue: asDbusValue(val[1]))
 
 proc asDbusValue*(val: Variant[DbusValue]): DbusValue =
-  DbusValue(kind: dtVariant, variantType: val.value.sign,
+  DbusValue(kind: scVariant, variantType: val.value.sign,
             variantValue: val.value)
 
 proc asDbusValue*[T](val: Variant[T]): DbusValue =
-  DbusValue(kind: dtVariant, variantType: T.sign,
+  DbusValue(kind: scVariant, variantType: T.sign,
             variantValue: asDbusValue(val.value))
 
 proc asNative*(value: DbusValue, native: typedesc[bool]): bool =
@@ -243,5 +243,5 @@ proc asNative*[T, K](value: DbusValue, native: typedesc[(T, K)]): (T, K) =
   (asNative(value.dictKey, T), asNative(value.dictValue, K))
 
 proc add*(dict: DbusValue, value: DbusValue) =
-  doAssert dict.kind == dtArray
+  doAssert dict.kind == scArray
   dict.arrayValue.add(value)
