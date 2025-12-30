@@ -27,7 +27,7 @@ proc testEcho[T](val: T): DbusValue =
 
   var it = reply.iterate
   # let v = it.unpackCurrent(DbusValue)
-  # assert v.asNative(string) == "Hello, world!"
+  # check v.asNative(string) == "Hello, world!"
   it.advanceIter
   return it.unpackCurrent(DbusValue)
 
@@ -54,42 +54,42 @@ test "basic":
   
   var it = reply.iterate
   let v = it.unpackCurrent(DbusValue)
-  assert v.asNative(string) == "Hello, world!"
+  check v.asNative(string) == "Hello, world!"
   it.advanceIter
-  assert it.unpackCurrent(uint32) == 6
+  check it.unpackCurrent(uint32) == 6
 
 test "int":
   let val = testEcho(uint32(6))
-  assert val.kind == dtUint32
-  assert val.asNative(uint32) == 6
+  check val.kind == dtUint32
+  check val.asNative(uint32) == 6
 
 test "arrays":
   let val = testEcho(@["a", "b"])
-  assert val.kind == dtArray
-  assert val.arrayValue[0].asNative(string) == "a"
-  assert val.arrayValue[1].asNative(string) == "b"
+  check val.kind == dtArray
+  check val.arrayValue[0].asNative(string) == "a"
+  check val.arrayValue[1].asNative(string) == "b"
 
 test "variant":
   let val = testEcho(newVariant("hi"))
-  assert val.variantType.kind == dtString
-  assert val.variantValue.asNative(string) == "hi"
+  check val.variantType.kind == dtString
+  check val.variantValue.asNative(string) == "hi"
 
 test "struct":
   let val = testEcho(DbusValue(kind: dtStruct, structValues: @[
     "hi".asDbusValue(),
     uint32(2).asDbusValue(),
   ]))
-  assert val.kind == dtStruct
-  assert val.structValues.len == 2
-  assert val.structValues[0].asNative(string) == "hi"
-  assert val.structValues[1].asNative(uint32) == 2
+  check val.kind == dtStruct
+  check val.structValues.len == 2
+  check val.structValues[0].asNative(string) == "hi"
+  check val.structValues[1].asNative(uint32) == 2
 
 test "tables":
   let val = testEcho({"a":"b"}.toTable())
-  assert val.kind == dtArray
-  assert val.arrayValueType.kind == dtDictEntry
-  assert val.arrayValue[0].dictKey.asNative(string) == "a"
-  assert val.arrayValue[0].dictValue.asNative(string) == "b"
+  check val.kind == dtArray
+  check val.arrayValueType.kind == dtDictEntry
+  check val.arrayValue[0].dictKey.asNative(string) == "a"
+  check val.arrayValue[0].dictValue.asNative(string) == "b"
 
 test "tables nested":
   let val = testEcho({
@@ -97,10 +97,10 @@ test "tables nested":
       "c":"d"
     }.toTable())
   }.toTable())
-  assert val.kind == dtArray
-  assert val.arrayValue[0].dictKey.asNative(string) == "a"
-  assert val.arrayValue[0].dictValue.variantValue.arrayValue[0].dictKey.asNative(string) == "c"
-  assert val.arrayValue[0].dictValue.variantValue.arrayValue[0].dictValue.asNative(string) == "d"
+  check val.kind == dtArray
+  check val.arrayValue[0].dictKey.asNative(string) == "a"
+  check val.arrayValue[0].dictValue.variantValue.arrayValue[0].dictKey.asNative(string) == "c"
+  check val.arrayValue[0].dictValue.variantValue.arrayValue[0].dictValue.asNative(string) == "d"
 
 test "tables mixed variant":
   let var1 = newVariant("foo").asDbusValue()
@@ -116,11 +116,11 @@ test "tables mixed variant":
   dict.add("a".asDbusValue(), var1)
   dict.add("b".asDbusValue(), var2)
   let val = testEcho(dict)
-  assert val.kind == dtArray
-  assert val.arrayValue[0].dictKey.asNative(string) == "a"
-  assert val.arrayValue[0].dictValue.variantValue.asNative(string) == "foo"
-  assert val.arrayValue[1].dictKey.asNative(string) == "b"
-  assert val.arrayValue[1].dictValue.variantValue.asNative(uint32) == 12
+  check val.kind == dtArray
+  check val.arrayValue[0].dictKey.asNative(string) == "a"
+  check val.arrayValue[0].dictValue.variantValue.asNative(string) == "foo"
+  check val.arrayValue[1].dictKey.asNative(string) == "b"
+  check val.arrayValue[1].dictValue.variantValue.asNative(uint32) == 12
 
 test "tables mixed variant":
   # TODO: make a nicer syntax for this
@@ -144,12 +144,12 @@ test "tables mixed variant":
   inner.add("c".asDbusValue(), "d".asDbusValue())
   outer.add("b".asDbusValue(), newVariant(inner).asDbusValue())
   let val = testEcho(outer)
-  assert val.kind == dtArray
-  assert val.arrayValue[0].dictKey.asNative(string) == "a"
-  assert val.arrayValue[0].dictValue.variantValue.asNative(string) == "foo"
-  assert val.arrayValue[1].dictKey.asNative(string) == "b"
-  assert val.arrayValue[1].dictValue.variantValue.arrayValue[0].dictKey.asNative(string) == "c"
-  assert val.arrayValue[1].dictValue.variantValue.arrayValue[0].dictValue.asNative(string) == "d"
+  check val.kind == dtArray
+  check val.arrayValue[0].dictKey.asNative(string) == "a"
+  check val.arrayValue[0].dictValue.variantValue.asNative(string) == "foo"
+  check val.arrayValue[1].dictKey.asNative(string) == "b"
+  check val.arrayValue[1].dictValue.variantValue.arrayValue[0].dictKey.asNative(string) == "c"
+  check val.arrayValue[1].dictValue.variantValue.arrayValue[0].dictValue.asNative(string) == "d"
 
 test "notify":
   let bus = getBus(DBUS_BUS_SESSION)
