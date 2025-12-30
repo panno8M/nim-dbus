@@ -47,21 +47,6 @@ type DbusType* = ref object
   else:
     discard
 
-proc `$`*(t: DbusType): string =
-  result.add("<DbusType " & $t.kind & " ")
-  case t.kind
-  of dtArray:
-    result.add($t.itemType)
-  of dtDictEntry:
-    result.add($t.keyType & " " & $t.valueType)
-  of dtStruct:
-    result.add($t.itemTypes)
-  of dtVariant:
-    result.add($t.variantType)
-  else:
-    discard
-  result.add(">")
-
 converter fromScalar*(ch: DbusTypeChar): DbusType =
   # assert ch notin dbusContainerTypes
   DbusType(kind: ch)
@@ -107,16 +92,16 @@ proc parseDbusType*(signature: string): DbusType =
     raise newException(Exception, "leftover data in signature: $1" % signature)
   return ret.kind
 
-proc makeDbusSignature*(kind: DbusType): string =
+proc `$`*(kind: DbusType): string =
   case kind.kind:
     of dtArray:
-      result = "a" & makeDbusSignature(kind.itemType)
+      result = "a" & $kind.itemType
     of dtDictEntry:
-      result = "{" & makeDbusSignature(kind.keyType) & makeDbusSignature(kind.valueType) & "}"
+      result = "{" & $kind.keyType & $kind.valueType & "}"
     of dtStruct:
       result = "("
       for t in kind.itemTypes:
-        result.add makeDbusSignature(t)
+        result.add $t
       result.add ")"
     else:
       result = $(kind.kind.char)

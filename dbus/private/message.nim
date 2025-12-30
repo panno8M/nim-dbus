@@ -93,11 +93,11 @@ proc append*(iter: ptr DbusMessageIter, x: DbusValue) =
       var str = x.getString.cstring
       iter.appendPtr(x.kind, addr str)
     of dtArray:
-      iter.appendArray(x.arrayValueType.makeDbusSignature, x.arrayValue)
+      iter.appendArray($x.arrayValueType, x.arrayValue)
     of dtDictEntry:
       iter.appendDictEntry(x.dictKey, x.dictValue)
     of dtVariant:
-      iter.appendVariant(x.variantType.makeDbusSignature, x.variantValue)
+      iter.appendVariant($x.variantType, x.variantValue)
     of dtStruct:
       iter.appendStruct(x.structValues)
     else:
