@@ -188,7 +188,7 @@ proc getDbusType*(val: DbusValue): DbusType =
     return DbusType(kind: dtStruct,
                     itemTypes: val.structValues.mapIt(getDbusType(it)))
   of dtVariant:
-    return DbusType(kind: dtVariant, variantType: val.variantType)
+    return DbusType(kind: dtVariant)
 
 proc getAnyDbusType*(val: DbusValue): DbusType =
   getDbusType(val)

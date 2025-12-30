@@ -88,8 +88,6 @@ type DbusType* = ref object
     valueType*: DbusType
   of dtStruct:
     itemTypes*: seq[DbusType]
-  of dtVariant:
-    variantType*: DbusType
   else:
     discard
 
@@ -108,7 +106,7 @@ proc initStructType*(itemTypes: seq[DbusType]): DbusType =
   DbusType(kind: dtStruct, itemTypes: itemTypes)
 
 proc initVariantType*(variantType: DbusType): DbusType =
-  DbusType(kind: dtVariant, variantType: variantType)
+  DbusType(kind: dtVariant)
 
 proc parseDbusFragment(signature: string): tuple[kind: DbusType, rest: string] =
   case signature[0]:
