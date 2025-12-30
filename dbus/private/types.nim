@@ -137,8 +137,7 @@ proc sons*(s: Signature): seq[Signature] =
   of scDictEntry, scStruct:
     result = s.inner.split
 
-converter fromScalar*(ch: SigCode): Signature =
-  # assert ch notin dbusContainerTypes
+proc sign*(ch: SigCode): Signature =
   Signature($ch.serialize)
 
 proc initArraySignature*(itemType: Signature): Signature =
@@ -152,30 +151,30 @@ proc initStructSignature*(itemTypes: seq[Signature]): Signature =
   Signature("(" & itemTypes.mapIt(string(it)).join("") & ")")
 
 proc sign*(native: typedesc[uint32]): Signature =
-  scUint32
+  scUint32.sign
 
 proc sign*(native: typedesc[uint16]): Signature =
-  scUint16
+  scUint16.sign
 
 proc sign*(native: typedesc[uint8]): Signature =
-  scByte
+  scByte.sign
 
 proc sign*(native: typedesc[int32]): Signature =
-  scInt32
+  scInt32.sign
 
 proc sign*(native: typedesc[int16]): Signature =
-  scInt16
+  scInt16.sign
 
 proc sign*(native: typedesc[cstring]): Signature =
-  scString
+  scString.sign
 proc sign*(native: typedesc[string]): Signature =
-  scString
+  scString.sign
 
 proc sign*(native: typedesc[ObjectPath]): Signature =
-  scObjectPath
+  scObjectPath.sign
 
 proc sign*[T](native: typedesc[Variant[T]]): Signature =
-  scVariant
+  scVariant.sign
 
 proc sign*[K, V](native: typedesc[(K, V)]): Signature =
   initDictEntrySignature(K.sign, V.sign)

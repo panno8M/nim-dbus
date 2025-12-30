@@ -71,7 +71,7 @@ proc unpackCurrent*(iter: var InputIter, native: typedesc[DbusValue]): DbusValue
   of scVariant:
     var subiter = iter.subIterate()
     let subvalue = subiter.unpackCurrent(native)
-    return DbusValue(kind: scVariant, variantType: subvalue.kind, variantValue: subvalue)
+    return DbusValue(kind: scVariant, variantType: subvalue.sign, variantValue: subvalue)
   of scDictEntry:
     var subiter = iter.subIterate()
     let key = subiter.unpackCurrent(DbusValue)
@@ -85,7 +85,7 @@ proc unpackCurrent*(iter: var InputIter, native: typedesc[DbusValue]): DbusValue
     var subkind: Signature
     while true:
       let subkindChar = dbus_message_iter_get_arg_type(addr subiter.iter).char
-      subkind = subkindChar.code
+      subkind = subkindChar.code.sign
       values.add(subiter.unpackCurrent(native))
       if dbus_message_iter_has_next(addr subiter.iter) == 0:
         break
@@ -93,8 +93,8 @@ proc unpackCurrent*(iter: var InputIter, native: typedesc[DbusValue]): DbusValue
     if values.len > 0 and subkind.code == scDictEntry:
       # Hard to get these when there are no values in the current system
       subkind = initDictEntrySignature(
-        values[0].dictKey.kind,
-        values[0].dictValue.kind,
+        values[0].dictKey.sign,
+        values[0].dictValue.sign,
       )
     return DbusValue(kind: scArray, arrayValueType: subkind, arrayValue: values)
   of scStruct:

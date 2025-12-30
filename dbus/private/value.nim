@@ -168,9 +168,9 @@ proc asDbusValue*(val: DbusValue): DbusValue =
 proc sign*(val: DbusValue): Signature =
   case val.kind
   of dbusFixedTypes:
-    return val.kind
+    return val.kind.sign
   of dbusStringTypes:
-    return val.kind
+    return val.kind.sign
   of scArray:
     return initArraySignature(val.arrayValueType)
   of scDictEntry:
@@ -178,7 +178,7 @@ proc sign*(val: DbusValue): Signature =
   of scStruct:
     return initStructSignature(val.structValues.mapIt(it.sign))
   of scVariant:
-    return val.kind
+    return val.kind.sign
 
 proc asDbusValue*[T](val: seq[T]): DbusValue =
   result = DbusValue(kind: scArray, arrayValueType: T.sign)
