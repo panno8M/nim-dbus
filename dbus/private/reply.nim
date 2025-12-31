@@ -57,7 +57,7 @@ proc subIterate*(iter: var InputIter): InputIter =
   # from https://leonardoce.wordpress.com/2015/03/17/dbus-tutorial-part-3/
   dbus_message_iter_recurse(addr iter.iter, addr result.iter)
 
-proc unpackCurrent*(iter: var InputIter, native: typedesc[DbusValue]): DbusValue =
+proc unpackCurrent(iter: var InputIter): DbusValue =
   let kind = dbus_message_iter_get_arg_type(addr iter.iter).char.code
   case kind:
   of dbusFixedTypes:
@@ -70,13 +70,20 @@ proc unpackCurrent*(iter: var InputIter, native: typedesc[DbusValue]): DbusValue
     return createStringDbusValue(kind, $s)
   of scVariant:
     var subiter = iter.subIterate()
-    let subvalue = subiter.unpackCurrent(native)
-    return DbusValue(kind: scVariant, variantType: subvalue.sign, variantValue: subvalue)
+    let subvalue = subiter.unpackCurrent()
+    var v: Variant
+    case subvalue.sign.code
+    of scString:
+      v = newVariant(subvalue.asNative(string))
+    else:
+      # TODO
+      raise newException(DbusException, "unsupported variant type: " & $v.typ)
+    return DbusValue(kind: scVariant, variantValue: v)
   of scDictEntry:
     var subiter = iter.subIterate()
-    let key = subiter.unpackCurrent(DbusValue)
+    let key = subiter.unpackCurrent()
     subiter.advanceIter()
-    let val = subiter.unpackCurrent(DbusValue)
+    let val = subiter.unpackCurrent()
     subiter.ensureEnd()
     return DbusValue(kind: scDictEntry, dictKey: key, dictValue: val)
   of scArray:
@@ -86,7 +93,7 @@ proc unpackCurrent*(iter: var InputIter, native: typedesc[DbusValue]): DbusValue
     while true:
       let subkindChar = dbus_message_iter_get_arg_type(addr subiter.iter).char
       subkind = subkindChar.code.sign
-      values.add(subiter.unpackCurrent(native))
+      values.add(subiter.unpackCurrent())
       if dbus_message_iter_has_next(addr subiter.iter) == 0:
         break
       subiter.advanceIter()
@@ -101,11 +108,13 @@ proc unpackCurrent*(iter: var InputIter, native: typedesc[DbusValue]): DbusValue
     var subiter = iter.subIterate()
     var values:seq[DbusValue]
     while true:
-      values.add(subiter.unpackCurrent(DbusValue))
+      values.add(subiter.unpackCurrent())
       if dbus_message_iter_has_next(addr subiter.iter) == 0:
         break
       subiter.advanceIter()
     return DbusValue(kind: scStruct, structValues: values)
 
-proc unpackCurrent*[T](iter: var InputIter, native: typedesc[T]): T =
-  unpackCurrent(iter, DbusValue).asNative(native)
+proc unpackCurrent*(iter: var InputIter, Expected: typedesc[DbusValue]): DbusValue =
+  unpackCurrent(iter)
+proc unpackCurrent*[T](iter: var InputIter, Expected: typedesc[T]): T =
+  unpackCurrent(iter).asNative(Expected)

@@ -1,6 +1,4 @@
 type
-  FD* = cint
-
   DbusValue* = ref object
     case kind*: SigCode
     of scArray:
@@ -37,8 +35,7 @@ type
     of scByte:
       byteValue*: uint8
     of scVariant:
-      variantType*: Signature
-      variantValue*: DbusValue
+      variantValue*: Variant
 
 proc `$`*(val: DbusValue): string =
   result.add("<DbusValue " & $val.kind & " ")
@@ -76,7 +73,7 @@ proc `$`*(val: DbusValue): string =
   of scByte:
     result.add($val.byteValue)
   of scVariant:
-    result.add(string(val.variantType) & ' ' & $val.variantValue)
+    result.add(string(val.variantValue.typ) & ' ' & $val.variantValue)
   result.add('>')
 
 proc getPrimitive(val: DbusValue): pointer =
@@ -190,13 +187,9 @@ proc asDbusValue*[K, V](val: (K, V)): DbusValue =
     dictKey: asDbusValue(val[0]),
     dictValue: asDbusValue(val[1]))
 
-proc asDbusValue*(val: Variant[DbusValue]): DbusValue =
-  DbusValue(kind: scVariant, variantType: val.value.sign,
-            variantValue: val.value)
-
-proc asDbusValue*[T](val: Variant[T]): DbusValue =
-  DbusValue(kind: scVariant, variantType: T.sign,
-            variantValue: asDbusValue(val.value))
+proc asDbusValue*(val: Variant): DbusValue =
+  DbusValue(kind: scVariant,
+            variantValue: val)
 
 proc asNative*(value: DbusValue, native: typedesc[bool]): bool =
   value.boolValue

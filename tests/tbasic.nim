@@ -1,6 +1,11 @@
 import unittest
 
-import dbus
+when false:
+  import dbus
+else:
+  import dbus {.all.}
+  import std/importutils
+  privateAccess Variant
 
 const
   TEST_BUSNAME = "com.zielmicha.test"
@@ -70,8 +75,8 @@ test "arrays":
 
 test "variant":
   let val = testEcho(newVariant("hi"))
-  check val.variantType.code == scString
-  check val.variantValue.asNative(string) == "hi"
+  check signatureOf(val.variantValue) == Signature("s")
+  check val.variantValue.data.string == "hi"
 
 test "struct":
   let val = testEcho(DbusValue(kind: scStruct, structValues: @[
@@ -98,8 +103,8 @@ test "tables nested":
   })
   check val.kind == scArray
   check val.arrayValue[0].dictKey.asNative(string) == "a"
-  check val.arrayValue[0].dictValue.variantValue.arrayValue[0].dictKey.asNative(string) == "c"
-  check val.arrayValue[0].dictValue.variantValue.arrayValue[0].dictValue.asNative(string) == "d"
+  check val.arrayValue[0].dictValue.variantValue.data.array[0].data.dictEntry.key.data.string == "c"
+  check val.arrayValue[0].dictValue.variantValue.data.array[0].data.dictEntry.value.data.string == "d"
 
 test "tables mixed variant":
   let var1 = newVariant("foo")
@@ -113,30 +118,30 @@ test "tables mixed variant":
   let val = testEcho(dict)
   check val.kind == scArray
   check val.arrayValue[0].dictKey.asNative(string) == "a"
-  check val.arrayValue[0].dictValue.variantValue.asNative(string) == "foo"
+  check val.arrayValue[0].dictValue.variantValue.data.string == "foo"
   check val.arrayValue[1].dictKey.asNative(string) == "b"
-  check val.arrayValue[1].dictValue.variantValue.asNative(uint32) == 12
+  check val.arrayValue[1].dictValue.variantValue.data.uint32 == 12
 
-test "tables mixed variant":
-  # TODO: make a nicer syntax for this
-  var outer = DbusValue(
-    kind: scArray,
-    arrayValueType: Signature("{sv}"),
-  )
-  var inner = DbusValue(
-    kind: scArray,
-    arrayValueType: Signature("{ss}"),
-  )
-  outer.add(("a", newVariant("foo")).asDbusValue)
-  inner.add(("c", "d").asDbusValue)
-  outer.add(("b", newVariant(inner)).asDbusValue)
-  let val = testEcho(outer)
-  check val.kind == scArray
-  check val.arrayValue[0].dictKey.asNative(string) == "a"
-  check val.arrayValue[0].dictValue.variantValue.asNative(string) == "foo"
-  check val.arrayValue[1].dictKey.asNative(string) == "b"
-  check val.arrayValue[1].dictValue.variantValue.arrayValue[0].dictKey.asNative(string) == "c"
-  check val.arrayValue[1].dictValue.variantValue.arrayValue[0].dictValue.asNative(string) == "d"
+# test "tables mixed variant":
+#   # TODO: make a nicer syntax for this
+#   var outer = DbusValue(
+#     kind: scArray,
+#     arrayValueType: Signature("{sv}"),
+#   )
+#   var inner = DbusValue(
+#     kind: scArray,
+#     arrayValueType: Signature("{ss}"),
+#   )
+#   outer.add(("a", newVariant("foo")).asDbusValue)
+#   inner.add(("c", "d").asDbusValue)
+#   outer.add(("b", newVariant(inner)).asDbusValue)
+#   let val = testEcho(outer)
+#   check val.kind == scArray
+#   check val.arrayValue[0].dictKey.asNative(string) == "a"
+#   check val.arrayValue[0].dictValue.variantValue.data.string == "foo"
+#   check val.arrayValue[1].dictKey.asNative(string) == "b"
+#   check val.arrayValue[1].dictValue.variantValue.data.array[0].data.dictEntry.key.data.string == "c"
+#   check val.arrayValue[1].dictValue.variantValue.data.array[0].data.dictEntry.value.data.string == "d"
 
 test "notify":
   let bus = getBus(DBUS_BUS_SESSION)

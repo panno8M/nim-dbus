@@ -62,12 +62,17 @@ proc appendDictEntry(iter: ptr DbusMessageIter, key, val: DbusValue) =
   if dbus_message_iter_close_container(iter, subIterPtr) == 0:
     raise newException(DbusException, "close_container")
 
-proc appendVariant(iter: ptr DbusMessageIter, sig: Signature, val: DbusValue) =
+proc appendVariant(iter: ptr DbusMessageIter, val: Variant) =
   var subIter: DbusMessageIter
   var subIterPtr = addr subIter
-  if dbus_message_iter_open_container(iter, scVariant.serialize.cint, cstring(sig), subIterPtr) == 0:
+  if dbus_message_iter_open_container(iter, scVariant.serialize.cint, cstring(val.typ), subIterPtr) == 0:
     raise newException(DbusException, "open_container")
-  subIterPtr.append(val)
+  case val.typ.code
+  of scString:
+    subIterPtr.append(val.data.string)
+  else:
+    # TODO
+    raise newException(DbusException, "unsupported variant type: " & $val.typ)
   if dbus_message_iter_close_container(iter, subIterPtr) == 0:
     raise newException(DbusException, "close_container")
 
@@ -97,7 +102,7 @@ proc append*(iter: ptr DbusMessageIter, x: DbusValue) =
     of scDictEntry:
       iter.appendDictEntry(x.dictKey, x.dictValue)
     of scVariant:
-      iter.appendVariant(x.variantType, x.variantValue)
+      iter.appendVariant(x.variantValue)
     of scStruct:
       iter.appendStruct(x.structValues)
 
