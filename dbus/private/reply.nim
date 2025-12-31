@@ -57,66 +57,112 @@ proc subIterate*(iter: var InputIter): InputIter =
   # from https://leonardoce.wordpress.com/2015/03/17/dbus-tutorial-part-3/
   dbus_message_iter_recurse(addr iter.iter, addr result.iter)
 
-proc unpackCurrent(iter: var InputIter): DbusValue =
+proc sign(iter: var InputIter): Signature =
+  let cs = dbus_message_iter_get_signature(addr iter.iter)
+  result = Signature($cs)
+  dbus_free(cs)
+
+proc unpackCurrent(iter: var InputIter): Variant =
   let kind = dbus_message_iter_get_arg_type(addr iter.iter).char.code
   case kind:
   of scNull:
     raise newException(DbusException, "cannot unpack null value")
-  of dbusFixedTypes:
-    let (value, scalarPtr) = createScalarDbusValue(kind)
-    dbus_message_iter_get_basic(addr iter.iter, scalarPtr)
-    return value
-  of dbusStringTypes:
+  of scBool:
+    var b: dbus_bool_t
+    dbus_message_iter_get_basic(addr iter.iter, addr b)
+    return newVariant(bool b)
+  of scByte:
+    var b: byte
+    dbus_message_iter_get_basic(addr iter.iter, addr b)
+    return newVariant(b)
+  of scInt16:
+    var i: int16
+    dbus_message_iter_get_basic(addr iter.iter, addr i)
+    return newVariant(i)
+  of scUint16:
+    var u: uint16
+    dbus_message_iter_get_basic(addr iter.iter, addr u)
+    return newVariant(u)
+  of scInt32:
+    var i: int32
+    dbus_message_iter_get_basic(addr iter.iter, addr i)
+    return newVariant(i)
+  of scUint32:
+    var u: uint32
+    dbus_message_iter_get_basic(addr iter.iter, addr u)
+    return newVariant(u)
+  of scInt64:
+    var i: int64
+    dbus_message_iter_get_basic(addr iter.iter, addr i)
+    return newVariant(i)
+  of scUint64:
+    var u: uint64
+    dbus_message_iter_get_basic(addr iter.iter, addr u)
+    return newVariant(u)
+  of scDouble:
+    var d: float64
+    dbus_message_iter_get_basic(addr iter.iter, addr d)
+    return newVariant(d)
+  of scUnixFd:
+    var fd: FD
+    dbus_message_iter_get_basic(addr iter.iter, addr fd)
+    return newVariant(fd)
+  of scString:
     var s: cstring
     dbus_message_iter_get_basic(addr iter.iter, addr s)
-    return createStringDbusValue(kind, $s)
+    return newVariant($s)
+  of scObjectPath:
+    var s: cstring
+    dbus_message_iter_get_basic(addr iter.iter, addr s)
+    return newVariant(ObjectPath($s))
+  of scSignature:
+    var s: cstring
+    dbus_message_iter_get_basic(addr iter.iter, addr s)
+    return newVariant(Signature($s))
   of scVariant:
     var subiter = iter.subIterate()
-    let subvalue = subiter.unpackCurrent()
-    var v: Variant
-    case subvalue.sign.code
-    of scString:
-      v = newVariant(subvalue.asNative(string))
-    else:
-      # TODO
-      raise newException(DbusException, "unsupported variant type: " & $v.typ)
-    return DbusValue(kind: scVariant, variantValue: v)
+    let val = subiter.unpackCurrent()
+    subiter.ensureEnd()
+    return val
   of scDictEntry:
     var subiter = iter.subIterate()
     let key = subiter.unpackCurrent()
+    let keysign = subiter.sign
     subiter.advanceIter()
     let val = subiter.unpackCurrent()
+    let valsign = subiter.sign
     subiter.ensureEnd()
-    return DbusValue(kind: scDictEntry, dictKey: key, dictValue: val)
+    return newVariant(DictEntryData(
+      typ: (keysign, valsign),
+      value: (key, val)
+    ))
   of scArray:
     var subiter = iter.subIterate()
-    var values: seq[DbusValue]
-    var subkind: Signature
+    var subsign = subiter.sign
+    var values: seq[Variant]
     while true:
-      let subkindChar = dbus_message_iter_get_arg_type(addr subiter.iter).char
-      subkind = subkindChar.code.sign
       values.add(subiter.unpackCurrent())
       if dbus_message_iter_has_next(addr subiter.iter) == 0:
         break
       subiter.advanceIter()
-    if values.len > 0 and subkind.code == scDictEntry:
-      # Hard to get these when there are no values in the current system
-      subkind = initDictEntrySignature(
-        values[0].dictKey.sign,
-        values[0].dictValue.sign,
-      )
-    return DbusValue(kind: scArray, arrayValueType: subkind, arrayValue: values)
+    return newVariant(ArrayData(
+      typ: subsign,
+      values: values)
+    )
   of scStruct:
     var subiter = iter.subIterate()
-    var values:seq[DbusValue]
+    var values:seq[Variant]
     while true:
       values.add(subiter.unpackCurrent())
       if dbus_message_iter_has_next(addr subiter.iter) == 0:
         break
       subiter.advanceIter()
-    return DbusValue(kind: scStruct, structValues: values)
+    return Variant(
+      typ: Signature("(" & values.mapIt(string(it.typ)).join("") & ")"),
+      data: VariantData(struct: values)
+    )
 
-proc unpackCurrent*(iter: var InputIter, Expected: typedesc[DbusValue]): DbusValue =
+proc unpackCurrent*(iter: var InputIter, Expected: typedesc[Variant]): Variant =
   unpackCurrent(iter)
 proc unpackCurrent*[T](iter: var InputIter, Expected: typedesc[T]): T =
   unpackCurrent(iter).asNative(Expected)

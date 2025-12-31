@@ -91,6 +91,12 @@ proc code*(s: Signature): SigCode =
   string(s)[0].code
 
 type
+  ArrayData = object
+    typ: Signature
+    values: seq[Variant]
+  DictEntryData = object
+    typ: tuple[key, value: Signature]
+    value: tuple[key, value: Variant]
   VariantData {.union.} = ref object
     int64*: int64
     int32*: int32
@@ -105,8 +111,8 @@ type
     ObjectPath*: ObjectPath
     Signature*: Signature
     struct*: seq[Variant]
-    array*: seq[Variant]
-    dictEntry*: tuple[key: Variant, value: Variant]
+    array*: ArrayData
+    dictEntry*: DictEntryData
     FD*: FD
 
   Variant* = object
@@ -366,11 +372,17 @@ proc newVariant*(value: Signature): Variant =
     data: VariantData(Signature: value)
   )
 
-proc newVariant*[T](value: openArray[T]): Variant =
+proc newVariant*(value: ArrayData): Variant =
   Variant(
-    typ: value.sign,
-    data: VariantData(array: value.mapIt(newVariant(it)))
+    typ: initArraySignature(value.typ),
+    data: VariantData(array: value),
   )
+
+proc newVariant*[T](value: openArray[T]): Variant =
+  newVariant(ArrayData(
+    typ: T.sign,
+    values: value.mapIt(newVariant(it)),
+  ))
 
 proc newVariant*[T: object](value: T): Variant =
   Variant(
@@ -381,8 +393,14 @@ proc newVariant*[T: object](value: T): Variant =
 proc newVariant*(value: Variant): Variant =
   `=dup`(value)
 
-proc newVariant*[K, V](value: (K, V)): Variant =
+proc newVariant*(value: DictEntryData): Variant =
   Variant(
-    typ: value.sign,
-    data: VariantData(dictEntry: (newVariant(value[0]), newVariant(value[1])))
+    typ: initDictEntrySignature(value.typ.key, value.typ.value),
+    data: VariantData(dictEntry: value),
   )
+
+proc newVariant*[K, V](value: (K, V)): Variant =
+  newVariant(DictEntryData(
+    typ: (K.sign, V.sign),
+    value: (newVariant(value[0]), newVariant(value[1]))
+  ))

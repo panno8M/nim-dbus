@@ -1,246 +1,92 @@
-type
-  DbusValue* = ref object
-    case kind*: SigCode
-    of scNull:
-      discard
-    of scArray:
-      arrayValueType*: Signature
-      arrayValue*: seq[DbusValue]
-    of scBool:
-      boolValue*: bool
-    of scDictEntry:
-      dictKey*, dictValue*: DbusValue
-    of scDouble:
-      doubleValue*: float64
-    of scSignature:
-      signatureValue*: Signature
-    of scUnixFd:
-      fdValue*: FD
-    of scInt32:
-      int32Value*: int32
-    of scInt16:
-      int16Value*: int16
-    of scObjectPath:
-      objectPathValue*: ObjectPath
-    of scUint16:
-      uint16Value*: uint16
-    of scString:
-      stringValue*: string
-    of scStruct:
-      structValues*: seq[DbusValue]
-    of scUint64:
-      uint64Value*: uint64
-    of scUint32:
-      uint32Value*: uint32
-    of scInt64:
-      int64Value*: int64
-    of scByte:
-      byteValue*: uint8
-    of scVariant:
-      variantValue*: Variant
 
-proc `$`*(val: DbusValue): string =
-  result.add("<DbusValue " & $val.kind & " ")
-  case val.kind
-  of scNull:
-    result.add("null")
+proc `$`*(val: Variant): string =
+  case val.typ.code
+  of scNull, scVariant:
+    result.add("<null>")
   of scArray:
-    result.add(string(val.arrayValueType) & ' ' & $val.arrayValue)
+    result.add($val.data.array)
   of scBool:
-    result.add($val.boolValue)
+    result.add($val.data.bool)
   of scDictEntry:
-    result.add($val.dictKey & ' ' & $val.dictValue)
+    result.add($val.data.dictEntry.value.key & ':' & $val.data.dictEntry.value.value)
   of scDouble:
-    result.add($val.doubleValue)
+    result.add($val.data.float64)
   of scSignature:
-    result.add(val.signatureValue.string)
+    result.add(val.data.Signature.string)
   of scUnixFd:
-    result.add($val.fdValue)
+    result.add($val.data.FD)
   of scInt32:
-    result.add($val.int32Value)
+    result.add($val.data.int32)
   of scInt16:
-    result.add($val.int16Value)
+    result.add($val.data.int16)
   of scObjectPath:
-    result.add(val.objectPathValue.string)
+    result.add(val.data.ObjectPath.string)
   of scUint16:
-    result.add($val.uint16Value)
+    result.add($val.data.uint16)
   of scString:
-    result.add(val.stringValue)
+    result.add(val.data.string)
   of scStruct:
-    result.add($val.structValues)
+    result.add($val.data.struct)
   of scUint64:
-    result.add($val.uint64Value)
+    result.add($val.data.uint64)
   of scUint32:
-    result.add($val.uint32Value.uint64)
+    result.add($val.data.uint32)
   of scInt64:
-    result.add($val.int64Value)
+    result.add($val.data.int64)
   of scByte:
-    result.add($val.byteValue)
-  of scVariant:
-    result.add(string(val.variantValue.typ) & ' ' & $val.variantValue)
-  result.add('>')
+    result.add($val.data.byte)
 
-proc getPrimitive(val: DbusValue): pointer =
-  case val.kind
-  of scDouble:
-    return addr val.doubleValue
-  of scInt32:
-    return addr val.int32Value
-  of scInt16:
-    return addr val.int16Value
-  of scUint16:
-    return addr val.uint16Value
-  of scUint64:
-    return addr val.uint64Value
-  of scUint32:
-    return addr val.uint32Value
-  of scInt64:
-    return addr val.int64Value
-  of scByte:
-    return addr val.byteValue
-  else:
-    raise newException(ValueError, "value is not primitive")
+proc asNative*(value: Variant; native: typedesc[Variant]): Variant =
+  value
 
-proc getString(val: DbusValue): var string =
-  case val.kind
-  of scString:
-    return val.stringValue
-  of scSignature:
-    return val.signatureValue.string
-  of scObjectPath:
-    return val.objectPathValue.string
-  else:
-    raise newException(ValueError, "value is not string")
+proc asNative*(value: Variant, native: typedesc[bool]): bool =
+  value.data.bool
 
-proc createStringDbusValue(kind: SigCode, val: string): DbusValue =
-  case kind
-  of scString:
-    result = DbusValue(kind: kind, stringValue: val)
-  of scSignature:
-    result = DbusValue(kind: kind, signatureValue: val.Signature)
-  of scObjectPath:
-    result = DbusValue(kind: kind, objectPathValue: val.ObjectPath)
-  else:
-    raise newException(ValueError, "value is not string")
+proc asNative*(value: Variant, native: typedesc[float64]): float64 =
+  value.data.float64
 
-proc createScalarDbusValue(kind: SigCode): tuple[value: DbusValue, scalarPtr: pointer] =
-  var value = DBusValue(kind: kind)
-  (value, getPrimitive(value))
+proc asNative*(value: Variant, native: typedesc[int16]): int16 =
+  value.data.int16
 
-proc asDbusValue*(val: bool): DbusValue =
-  DbusValue(kind: scBool, boolValue: val)
+proc asNative*(value: Variant, native: typedesc[int32]): int32 =
+  value.data.int32
 
-proc asDbusValue*(val: float64): DbusValue =
-  DbusValue(kind: scDouble, doubleValue: val)
+proc asNative*(value: Variant, native: typedesc[int64]): int64 =
+  value.data.int64
 
-proc asDbusValue*(val: int16): DbusValue =
-  DbusValue(kind: scInt16, int16Value: val)
+proc asNative*(value: Variant, native: typedesc[uint16]): uint16 =
+  value.data.uint16
 
-proc asDbusValue*(val: int32): DbusValue =
-  DbusValue(kind: scInt32, int32Value: val)
+proc asNative*(value: Variant, native: typedesc[uint32]): uint32 =
+  value.data.uint32
 
-proc asDbusValue*(val: int64): DbusValue =
-  DbusValue(kind: scInt64, int64Value: val)
+proc asNative*(value: Variant, native: typedesc[uint64]): uint64 =
+  value.data.uint64
 
-proc asDbusValue*(val: uint16): DbusValue =
-  DbusValue(kind: scUint16, uint16Value: val)
+proc asNative*(value: Variant, native: typedesc[uint8]): uint8 =
+  value.data.byte
 
-proc asDbusValue*(val: uint32): DbusValue =
-  DbusValue(kind: scUint32, uint32Value: val)
+proc asNative*(value: Variant, native: typedesc[string]): string =
+  value.data.string
 
-proc asDbusValue*(val: uint64): DbusValue =
-  DbusValue(kind: scUint64, uint64Value: val)
+proc asNative*(value: Variant, native: typedesc[ObjectPath]): ObjectPath =
+  value.data.ObjectPath
 
-proc asDbusValue*(val: uint8): DbusValue =
-  DbusValue(kind: scByte, byteValue: val)
+proc asNative*(value: Variant, native: typedesc[Signature]): Signature =
+  value.data.Signature
 
-proc asDbusValue*(val: string): DbusValue =
-  DbusValue(kind: scString, stringValue: val)
+proc asNative*(value: Variant; native: typedesc[FD]): FD =
+  value.data.FD
 
-proc asDbusValue*(val: ObjectPath): DbusValue =
-  DbusValue(kind: scObjectPath, objectPathValue: val)
+proc asNative*(value: Variant; native: typedesc[seq[Variant]]): seq[Variant] =
+  value.data.array.values
 
-proc asDbusValue*(val: Signature): DbusValue =
-  DbusValue(kind: scSignature, signatureValue: val)
+proc asNative*[T](value: Variant, native: typedesc[seq[T]]): seq[T] =
+  value.data.array.values.mapIt(asNative(it, T))
 
-proc asDbusValue*(val: DbusValue): DbusValue =
-  val
+proc asNative*(value: Variant, native: typedesc[(Variant, Variant)]): tuple[key: Variant, value: Variant] =
+  value.data.dictEntry
 
-proc sign*(val: DbusValue): Signature =
-  case val.kind
-  of scNull:
-    raise newException(DbusException, "null value has no signature")
-  of dbusFixedTypes:
-    return val.kind.sign
-  of dbusStringTypes:
-    return val.kind.sign
-  of scArray:
-    return initArraySignature(val.arrayValueType)
-  of scDictEntry:
-    return initDictEntrySignature(val.dictKey.sign, val.dictValue.sign)
-  of scStruct:
-    return initStructSignature(val.structValues.mapIt(it.sign))
-  of scVariant:
-    return val.kind.sign
-
-proc asDbusValue*[T](val: seq[T]): DbusValue =
-  result = DbusValue(kind: scArray, arrayValueType: T.sign)
-  for x in val:
-    result.arrayValue.add x.asDbusValue
-
-proc asDbusValue*[K, V](val: (K, V)): DbusValue =
-  result = DbusValue(kind: scDictEntry,
-    dictKey: asDbusValue(val[0]),
-    dictValue: asDbusValue(val[1]))
-
-proc asDbusValue*(val: Variant): DbusValue =
-  DbusValue(kind: scVariant,
-            variantValue: val)
-
-proc asNative*(value: DbusValue, native: typedesc[bool]): bool =
-  value.boolValue
-
-proc asNative*(value: DbusValue, native: typedesc[float64]): float64 =
-  value.doubleValue
-
-proc asNative*(value: DbusValue, native: typedesc[int16]): int16 =
-  value.int16Value
-
-proc asNative*(value: DbusValue, native: typedesc[int32]): int32 =
-  value.int32Value
-
-proc asNative*(value: DbusValue, native: typedesc[int64]): int64 =
-  value.int64Value
-
-proc asNative*(value: DbusValue, native: typedesc[uint16]): uint16 =
-  value.uint16Value
-
-proc asNative*(value: DbusValue, native: typedesc[uint32]): uint32 =
-  value.uint32Value
-
-proc asNative*(value: DbusValue, native: typedesc[uint64]): uint64 =
-  value.uint64Value
-
-proc asNative*(value: DbusValue, native: typedesc[uint8]): uint8 =
-  value.byteValue
-
-proc asNative*(value: DbusValue, native: typedesc[string]): string =
-  value.stringValue
-
-proc asNative*(value: DbusValue, native: typedesc[ObjectPath]): ObjectPath =
-  value.objectPathValue
-
-proc asNative*(value: DbusValue, native: typedesc[Signature]): Signature =
-  value.signatureValue
-
-proc asNative*[T](value: DbusValue, native: typedesc[seq[T]]): seq[T] =
-  for str in value.arrayValue:
-    result.add asNative(str, T)
-
-proc asNative*[T, K](value: DbusValue, native: typedesc[(T, K)]): (T, K) =
-  if value == nil: return
-  (asNative(value.dictKey, T), asNative(value.dictValue, K))
-
-proc add*(dict: DbusValue, value: DbusValue) =
-  doAssert dict.kind == scArray
-  dict.arrayValue.add(value)
+proc asNative*[T, K](value: Variant, native: typedesc[(T, K)]): tuple[key: T, value: K] =
+  let (key, value) = value.data.dictEntry
+  (asNative(key, T), asNative(value, K))

@@ -53,14 +53,14 @@ proc iterate*(incoming: IncomingMessage): InputIter =
   if dbus_message_iter_init(incoming.msg, addr result.iter) == 0:
     raise newException(DbusException, "dbus_message_iter_init")
 
-proc unpackValueSeq*(incoming: IncomingMessage): seq[DbusValue] =
+proc unpackValueSeq*(incoming: IncomingMessage): seq[Variant] =
   var iter: InputIter
   if dbus_message_iter_init(incoming.msg, addr iter.iter) == 0:
     return @[]
 
   result = @[]
   while true:
-    result.add iter.unpackCurrent(DbusValue)
+    result.add iter.unpackCurrent(Variant)
     if dbus_message_iter_next(addr iter.iter) == 0:
       break
 
@@ -77,7 +77,7 @@ proc sendErrorReply*(bus: Bus, incoming: IncomingMessage, message: string) =
   assert replyMsg != nil
   sendReplyTail(bus, replyMsg)
 
-proc sendReply*(bus: Bus, incoming: IncomingMessage, args: seq[DbusValue]) =
+proc sendReply*(bus: Bus, incoming: IncomingMessage, args: seq[Variant]) =
   let replyMsg = dbus_message_new_method_return(incoming.msg)
   assert replyMsg != nil
   var iter: DbusMessageIter

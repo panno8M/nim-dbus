@@ -31,10 +31,6 @@ proc sendMessageWithReply*(bus: Bus, msg: Message): PendingCall =
     raise newException(DbusException, "pending call still nil")
 
 # Serialization
-
-proc append*(iter: ptr DbusMessageIter, x: DbusValue)
-proc append*[T](iter: ptr DbusMessageIter, x: T)
-
 proc initIter*(msg: Message): DbusMessageIter =
   dbus_message_iter_init_append(msg.msg, addr result)
 
@@ -42,75 +38,122 @@ proc appendPtr(iter: ptr DbusMessageIter, typecode: SigCode, data: pointer) =
   if dbus_message_iter_append_basic(iter, typecode.serialize.cint, data) == 0:
       raise newException(DbusException, "append_basic")
 
-proc appendArray(iter: ptr DbusMessageIter, sig: Signature, arr: openarray[DbusValue]) =
-  var subIter: DBusMessageIter
-  var subIterPtr = addr subIter
-  if dbus_message_iter_open_container(iter, scArray.serialize.cint, cstring(sig), subIterPtr) == 0:
+proc appendElement(iter: ptr DbusMessageIter; sign: Signature; x: Variant)
+
+template withContainer(iter: ptr DbusMessageIter; subIter; code: SigCode; sig: Signature; body) =
+  var subIter {.inject.}: DBusMessageIter
+  let p = if sig == Signature"": cstring(nil) else: cstring(sig)
+  if dbus_message_iter_open_container(iter, code.serialize.cint, p, addr subIter) == 0:
     raise newException(DbusException, "open_container")
-  for item in arr:
-    subIterPtr.append(item)
-  if dbus_message_iter_close_container(iter, subIterPtr) == 0:
+  body
+  if dbus_message_iter_close_container(iter, addr subIter) == 0:
     raise newException(DbusException, "close_container")
 
-proc appendDictEntry(iter: ptr DbusMessageIter, key, val: DbusValue) =
-  var subIter: DbusMessageIter
-  var subIterPtr = addr subIter
-  if dbus_message_iter_open_container(iter, scDictEntry.serialize.cint, nil, subIterPtr) == 0:
-    raise newException(DbusException, "open_container")
-  subIterPtr.append(key)
-  subIterPtr.append(val)
-  if dbus_message_iter_close_container(iter, subIterPtr) == 0:
-    raise newException(DbusException, "close_container")
+proc append*(iter: ptr DbusMessageIter, data: ArrayData) =
+  iter.withContainer(subIter, scArray, data.typ):
+    for item in data.values:
+      (addr subIter).appendElement(data.typ, item)
 
-proc appendVariant(iter: ptr DbusMessageIter, val: Variant) =
-  var subIter: DbusMessageIter
-  var subIterPtr = addr subIter
-  if dbus_message_iter_open_container(iter, scVariant.serialize.cint, cstring(val.typ), subIterPtr) == 0:
-    raise newException(DbusException, "open_container")
-  case val.typ.code
-  of scString:
-    subIterPtr.append(val.data.string)
-  else:
-    # TODO
-    raise newException(DbusException, "unsupported variant type: " & $val.typ)
-  if dbus_message_iter_close_container(iter, subIterPtr) == 0:
-    raise newException(DbusException, "close_container")
+proc append*(iter: ptr DbusMessageIter; data: DictEntryData) =
+  iter.withContainer(subIter, scDictEntry, Signature""):
+    (addr subIter).appendElement(data.typ.key, data.value.key)
+    (addr subIter).appendElement(data.typ.value, data.value.value)
 
-proc appendStruct(iter: ptr DbusMessageIter, arr: openarray[DbusValue]) =
-  var subIter: DbusMessageIter
-  var subIterPtr = addr subIter
-  if dbus_message_iter_open_container(iter, scStruct.serialize.cint, nil, subIterPtr) == 0:
-    raise newException(DbusException, "open_container")
-  for item in arr:
-    subIterPtr.append(item)
-  if dbus_message_iter_close_container(iter, subIterPtr) == 0:
-    raise newException(DbusException, "close_container")
+proc appendStruct(iter: ptr DbusMessageIter, arr: openarray[Variant]) =
+  iter.withContainer(subIter, scStruct, Signature""):
+    for item in arr:
+      (addr subIter).appendElement(item.typ, item)
 
-proc append*(iter: ptr DbusMessageIter, x: DbusValue) =
-  case x.kind:
+proc append*(iter: ptr DbusMessageIter; x: bool) =
+  var val = dbus_bool_t(x)
+  iter.appendPtr(scBool, addr val)
+
+proc append*(iter: ptr DbusMessageIter; x: byte) =
+  iter.appendPtr(scByte, addr x)
+
+proc append*(iter: ptr DbusMessageIter; x: int16) =
+  iter.appendPtr(scInt16, addr x)
+
+proc append*(iter: ptr DbusMessageIter; x: uint16) =
+  iter.appendPtr(scUint16, addr x)
+
+proc append*(iter: ptr DbusMessageIter; x: int32) =
+  iter.appendPtr(scInt32, addr x)
+
+proc append*(iter: ptr DbusMessageIter; x: uint32) =
+  iter.appendPtr(scUint32, addr x)
+
+proc append*(iter: ptr DbusMessageIter; x: int64) =
+  iter.appendPtr(scInt64, addr x)
+
+proc append*(iter: ptr DbusMessageIter; x: uint64) =
+  iter.appendPtr(scUint64, addr x)
+
+proc append*(iter: ptr DbusMessageIter; x: float64) =
+  iter.appendPtr(scDouble, addr x)
+
+proc append*(iter: ptr DbusMessageIter; x: FD) =
+  iter.appendPtr(scUnixFd, addr x)
+
+proc append*(iter: ptr DbusMessageIter; x: string) =
+  var str = cstring(x)
+  iter.appendPtr(scString, addr str)
+
+proc append*(iter: ptr DbusMessageIter; x: ObjectPath) =
+  var str = cstring(x)
+  iter.appendPtr(scObjectPath, addr str)
+
+proc append*(iter: ptr DbusMessageIter; x: Signature) =
+  var str = cstring(x)
+  iter.appendPtr(scSignature, addr str)
+
+proc append*[T](iter: ptr DbusMessageIter; x: seq[T]) =
+  iter.append ArrayData(
+    typ: T.sign,
+    values: x.map(newVariant))
+
+proc append*(iter: ptr DbusMessageIter, val: Variant) =
+  iter.withContainer(subIter, scVariant, val.typ):
+    (addr subIter).appendElement(val.typ, val)
+
+proc appendElement(iter: ptr DbusMessageIter; sign: Signature; x: Variant) =
+  case sign.code:
     of scNull:
       raise newException(DbusException, "cannot append null value")
     of scBool:
-      let val = x.boolValue.uint32
-      iter.appendPtr(x.kind, addr val)
-    of dbusFixedTypes - {scBool}:
-      iter.appendPtr(x.kind, x.getPrimitive)
-    of dbusStringTypes:
-      # dbus_message_iter_append_basic copies its argument, so this is safe
-      var str = x.getString.cstring
-      iter.appendPtr(x.kind, addr str)
+      iter.append(x.data.bool)
+    of scByte:
+      iter.append(x.data.byte)
+    of scInt16:
+      iter.append(x.data.int16)
+    of scUint16:
+      iter.append(x.data.uint16)
+    of scInt32:
+      iter.append(x.data.int32)
+    of scUint32:
+      iter.append(x.data.uint32)
+    of scInt64:
+      iter.append(x.data.int64)
+    of scUint64:
+      iter.append(x.data.uint64)
+    of scDouble:
+      iter.append(x.data.float64)
+    of scUnixFd:
+      iter.append(x.data.FD)
+    of scString:
+      iter.append(x.data.string)
+    of scObjectPath:
+      iter.append(x.data.ObjectPath)
+    of scSignature:
+      iter.append(x.data.Signature)
     of scArray:
-      iter.appendArray(x.arrayValueType, x.arrayValue)
+      iter.append(x.data.array)
     of scDictEntry:
-      iter.appendDictEntry(x.dictKey, x.dictValue)
-    of scVariant:
-      iter.appendVariant(x.variantValue)
+      iter.append(x.data.dictEntry)
     of scStruct:
-      iter.appendStruct(x.structValues)
-
-# anything convertible to DbusValue
-proc append*[T](iter: ptr DbusMessageIter, x: T) =
-  iter.append(x.asDbusValue)
+      iter.appendStruct(x.data.struct)
+    of scVariant:
+      iter.append(x)
 
 proc append*[T](msg: Message, x: T) =
   var iter = initIter(msg)
