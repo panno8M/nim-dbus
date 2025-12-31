@@ -88,6 +88,8 @@ proc appendStruct(iter: ptr DbusMessageIter, arr: openarray[DbusValue]) =
 
 proc append*(iter: ptr DbusMessageIter, x: DbusValue) =
   case x.kind:
+    of scNull:
+      raise newException(DbusException, "cannot append null value")
     of scBool:
       let val = x.boolValue.uint32
       iter.appendPtr(x.kind, addr val)

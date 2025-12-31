@@ -60,6 +60,8 @@ proc subIterate*(iter: var InputIter): InputIter =
 proc unpackCurrent(iter: var InputIter): DbusValue =
   let kind = dbus_message_iter_get_arg_type(addr iter.iter).char.code
   case kind:
+  of scNull:
+    raise newException(DbusException, "cannot unpack null value")
   of dbusFixedTypes:
     let (value, scalarPtr) = createScalarDbusValue(kind)
     dbus_message_iter_get_basic(addr iter.iter, scalarPtr)

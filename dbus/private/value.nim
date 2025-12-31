@@ -1,6 +1,8 @@
 type
   DbusValue* = ref object
     case kind*: SigCode
+    of scNull:
+      discard
     of scArray:
       arrayValueType*: Signature
       arrayValue*: seq[DbusValue]
@@ -40,6 +42,8 @@ type
 proc `$`*(val: DbusValue): string =
   result.add("<DbusValue " & $val.kind & " ")
   case val.kind
+  of scNull:
+    result.add("null")
   of scArray:
     result.add(string(val.arrayValueType) & ' ' & $val.arrayValue)
   of scBool:
@@ -164,6 +168,8 @@ proc asDbusValue*(val: DbusValue): DbusValue =
 
 proc sign*(val: DbusValue): Signature =
   case val.kind
+  of scNull:
+    raise newException(DbusException, "null value has no signature")
   of dbusFixedTypes:
     return val.kind.sign
   of dbusStringTypes:

@@ -1,10 +1,12 @@
 import strutils, sequtils
 
 type ObjectPath* = distinct string
+# TODO: validate Signature runes
 type Signature* = distinct string
 type FD* = distinct FileHandle
 
 type SigCode* = enum
+  scNull
   scByte
   scBool
   scInt16
@@ -27,6 +29,9 @@ type SigCode* = enum
 
 proc serialize*(kind: SigCode): char =
   case kind
+  of scNull:
+    raise newException(DbusException, "cannot serialize null type")
+
   of scByte: 'y'
   of scBool: 'b'
   of scInt16: 'n'
@@ -113,6 +118,8 @@ proc signatureOf*(v: Variant): Signature =
 
 proc inner(s: Signature): Signature =
   case s.code
+  of scNull:
+    raise newException(DbusException, "null signature has no inner type")
   of dbusFixedTypes, dbusStringTypes, scVariant:
     return Signature("")
   of scArray:
@@ -126,6 +133,8 @@ proc split(sig: Signature): seq[Signature] =
   var start = 0
   for i, c in s:
     case c.code
+    of scNull:
+      raise newException(DbusException, "null signature has no subtypes")
     of dbusFixedTypes, dbusStringTypes, scVariant:
       if searching.len == 0:
         result.add(Signature(s[start..i]))
@@ -155,6 +164,8 @@ proc split(sig: Signature): seq[Signature] =
 
 proc sons*(s: Signature): seq[Signature] =
   case s.code
+  of scNull:
+    raise newException(DbusException, "null signature has no subtypes")
   of dbusFixedTypes, dbusStringTypes, scVariant:
     result = @[]
   of scArray:
