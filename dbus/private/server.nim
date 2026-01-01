@@ -31,31 +31,20 @@ proc registerObject(bus: Bus, path: ObjectPath,
 # TYPES
 
 type
-  IncomingMessageType* = enum
-    mtCall
-    mtSignal
-
-  MessageCallback* = proc(kind: IncomingMessageType, incomingMessage: IncomingMessage): bool
-
-  IncomingMessage* = object
-    msg: ptr DBusMessage
+  MessageCallback* = proc(incoming: Message): bool
 
   PackedMessageCallback = ref object
     callback: MessageCallback
 
-proc name*(incoming: IncomingMessage): string =
-  $dbus_message_get_member(incoming.msg)
+proc name*(incoming: Message): string =
+  $dbus_message_get_member(incoming.raw)
 
-proc interfaceName*(incoming: IncomingMessage): string =
-  $dbus_message_get_interface(incoming.msg)
+proc interfaceName*(incoming: Message): string =
+  $dbus_message_get_interface(incoming.raw)
 
-proc iterate*(incoming: IncomingMessage): InputIter =
-  if dbus_message_iter_init(incoming.msg, addr result.iter) == 0:
-    raise newException(DbusException, "dbus_message_iter_init")
-
-proc unpackValueSeq*(incoming: IncomingMessage): seq[Variant] =
+proc unpackValueSeq*(incoming: Message): seq[Variant] =
   var iter: InputIter
-  if dbus_message_iter_init(incoming.msg, addr iter.iter) == 0:
+  if dbus_message_iter_init(incoming.raw, addr iter.iter) == 0:
     return @[]
 
   result = @[]
@@ -63,30 +52,6 @@ proc unpackValueSeq*(incoming: IncomingMessage): seq[Variant] =
     result.add iter.decode(Variant)
     if dbus_message_iter_next(addr iter.iter) == 0:
       break
-
-proc sendReplyTail(bus: Bus, replyMsg: ptr DbusMessage) =
-  let ret = dbus_connection_send(bus.conn, replyMsg, nil)
-  if not bool(ret):
-    raise newException(DbusException, "dbus_connection_send")
-
-  dbus_message_unref(replyMsg)
-  bus.flush()
-
-proc sendErrorReply*(bus: Bus, incoming: IncomingMessage, message: string) =
-  let replyMsg = dbus_message_new_error(incoming.msg, "org.freedesktop.DBus.Error.Failed", message)
-  assert replyMsg != nil
-  sendReplyTail(bus, replyMsg)
-
-proc sendReply*(bus: Bus, incoming: IncomingMessage, args: seq[Variant]) =
-  let replyMsg = dbus_message_new_method_return(incoming.msg)
-  assert replyMsg != nil
-  var iter: DbusMessageIter
-  dbus_message_iter_init_append(replyMsg, addr iter)
-
-  for arg in args:
-    (addr iter).append(arg)
-
-  sendReplyTail(bus, replyMsg)
 
 # VTABLE
 
@@ -96,16 +61,15 @@ const
 
 proc messageFunc(connection: ptr DBusConnection, message: ptr DBusMessage, user_data: pointer): DBusHandlerResult {.cdecl.} =
   let rawType = dbus_message_get_type(message)
-  var kind: IncomingMessageType
+  var msg: Message
   if rawType == DBUS_MESSAGE_TYPE_METHOD_CALL:
-    kind = mtCall
+    msg = MethodCallMessage(raw: message)
   elif rawType == DBUS_MESSAGE_TYPE_SIGNAL:
-    kind = mtSignal
+    msg = SignalMessage(raw: message)
   else:
     raise newException(DbusException, "unknown message(" & $rawType & ")")
 
-  let callback = cast[PackedMessageCallback](userData).callback
-  let ok = callback(kind, IncomingMessage(msg: message))
+  let ok = cast[PackedMessageCallback](userData).callback(msg)
   if ok:
     return DBUS_HANDLER_RESULT_HANDLED
   else:
