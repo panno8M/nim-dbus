@@ -36,57 +36,57 @@ proc `$`*(val: Variant): string =
   of scByte:
     result.add($val.data.byte)
 
-proc asNative*(value: Variant; native: typedesc[Variant]): Variant =
+proc get*(value: Variant; native: typedesc[Variant]): Variant =
   value
 
-proc asNative*(value: Variant, native: typedesc[bool]): bool =
+proc get*(value: Variant, native: typedesc[bool]): bool =
   value.data.bool
 
-proc asNative*(value: Variant, native: typedesc[float64]): float64 =
+proc get*(value: Variant, native: typedesc[float64]): float64 =
   value.data.float64
 
-proc asNative*(value: Variant, native: typedesc[int16]): int16 =
+proc get*(value: Variant, native: typedesc[int16]): int16 =
   value.data.int16
 
-proc asNative*(value: Variant, native: typedesc[int32]): int32 =
+proc get*(value: Variant, native: typedesc[int32]): int32 =
   value.data.int32
 
-proc asNative*(value: Variant, native: typedesc[int64]): int64 =
+proc get*(value: Variant, native: typedesc[int64]): int64 =
   value.data.int64
 
-proc asNative*(value: Variant, native: typedesc[uint16]): uint16 =
+proc get*(value: Variant, native: typedesc[uint16]): uint16 =
   value.data.uint16
 
-proc asNative*(value: Variant, native: typedesc[uint32]): uint32 =
+proc get*(value: Variant, native: typedesc[uint32]): uint32 =
   value.data.uint32
 
-proc asNative*(value: Variant, native: typedesc[uint64]): uint64 =
+proc get*(value: Variant, native: typedesc[uint64]): uint64 =
   value.data.uint64
 
-proc asNative*(value: Variant, native: typedesc[uint8]): uint8 =
+proc get*(value: Variant, native: typedesc[uint8]): uint8 =
   value.data.byte
 
-proc asNative*(value: Variant, native: typedesc[string]): string =
+proc get*(value: Variant, native: typedesc[string]): string =
   value.data.string
 
-proc asNative*(value: Variant, native: typedesc[ObjectPath]): ObjectPath =
+proc get*(value: Variant, native: typedesc[ObjectPath]): ObjectPath =
   value.data.ObjectPath
 
-proc asNative*(value: Variant, native: typedesc[Signature]): Signature =
+proc get*(value: Variant, native: typedesc[Signature]): Signature =
   value.data.Signature
 
-proc asNative*(value: Variant; native: typedesc[FD]): FD =
+proc get*(value: Variant; native: typedesc[FD]): FD =
   value.data.FD
 
-proc asNative*(value: Variant; native: typedesc[seq[Variant]]): seq[Variant] =
+proc get*(value: Variant; native: typedesc[seq[Variant]]): seq[Variant] =
   value.data.array.values
 
-proc asNative*[T](value: Variant, native: typedesc[seq[T]]): seq[T] =
-  value.data.array.values.mapIt(asNative(it, T))
+proc get*[T](value: Variant, native: typedesc[seq[T]]): seq[T] =
+  value.data.array.values.mapIt(it.get(T))
 
-proc asNative*(value: Variant, native: typedesc[(Variant, Variant)]): tuple[key: Variant, value: Variant] =
+proc get*(value: Variant, native: typedesc[(Variant, Variant)]): tuple[key: Variant, value: Variant] =
   value.data.dictEntry
 
-proc asNative*[T, K](value: Variant, native: typedesc[(T, K)]): tuple[key: T, value: K] =
-  let (key, value) = value.data.dictEntry
-  (asNative(key, T), asNative(value, K))
+proc get*[T, K](value: Variant, native: typedesc[(T, K)]): tuple[key: T, value: K] =
+  let (key, value) = value.data.dictEntry.value
+  (key.get(T), value.get(K))

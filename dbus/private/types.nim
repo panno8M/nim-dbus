@@ -83,7 +83,11 @@ const dbusContainerTypes* = {scArray..scDictEntry}
 proc `==`*(a, b: Signature): bool {.borrow.}
 proc `$`*(s: Signature): string {.borrow.}
 
+proc `==`*(a, b: FD): bool {.borrow.}
 proc `$`*(f: FD): string {.borrow.}
+
+proc `==`*(a, b: ObjectPath): bool {.borrow.}
+proc `$`*(f: ObjectPath): string {.borrow.}
 
 proc code*(s: Signature): SigCode =
   if string(s).len == 0:
@@ -118,6 +122,49 @@ type
   Variant* = object
     typ: Signature
     data: VariantData
+
+func `==`*(a, b: Variant): bool =
+  if a.typ == b.typ:
+    if a.data != nil:
+      case a.typ.code
+      of scNull, scVariant:
+        true
+      of scBool:
+        a.data.bool == b.data.bool
+      of scByte:
+        a.data.byte == b.data.byte
+      of scInt16:
+        a.data.int16 == b.data.int16
+      of scUint16:
+        a.data.uint16 == b.data.uint16
+      of scInt32:
+        a.data.int32 == b.data.int32
+      of scUint32:
+        a.data.uint32 == b.data.uint32
+      of scInt64:
+        a.data.int64 == b.data.int64
+      of scUint64:
+        a.data.uint64 == b.data.uint64
+      of scDouble:
+        a.data.float64 == b.data.float64
+      of scUnixFd:
+        a.data.FD == b.data.FD
+      of scString:
+        a.data.string == b.data.string
+      of scObjectPath:
+        a.data.ObjectPath == b.data.ObjectPath
+      of scSignature:
+        a.data.Signature == b.data.Signature
+      of scArray:
+        a.data.array == b.data.array
+      of scDictEntry:
+        a.data.dictEntry == b.data.dictEntry
+      of scStruct:
+        a.data.struct == b.data.struct
+    else:
+      false
+  else:
+    false
 
 proc signatureOf*(v: Variant): Signature =
   v.typ

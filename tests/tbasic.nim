@@ -60,25 +60,24 @@ test "basic":
   
   var it = reply.iterate
   let v = it.unpackCurrent(Variant)
-  check v.asNative(string) == "Hello, world!"
+  check v.get(string) == "Hello, world!"
   it.advanceIter
   check it.unpackCurrent(uint32) == 6
 
 test "int":
   let val = testEcho(uint32(6))
-  check signatureOf(val).code == scUint32
-  check val.asNative(uint32) == 6
+  check signatureOf(val) == Signature"u"
+  check val.get(uint32) == 6
 
 test "arrays":
   let val = testEcho(@["a", "b"])
-  check signatureOf(val).code == scArray
-  check val.asNative(seq[Variant])[0].asNative(string) == "a"
-  check val.asNative(seq[Variant])[1].asNative(string) == "b"
+  check signatureOf(val) == Signature"as"
+  check val.get(seq[string]) == @["a", "b"]
 
 test "variant":
   let val = testEcho(newVariant("hi"))
-  check signatureOf(val) == Signature("s")
-  check val.asNative(string) == "hi"
+  check signatureOf(val) == Signature"s"
+  check val.get(string) == "hi"
 
 test "struct":
   let val = testEcho(Variant(
@@ -88,76 +87,54 @@ test "struct":
         newVariant("hi"),
         newVariant(uint32(2)),
     ])))
-  check signatureOf(val).code == scStruct
+  check signatureOf(val) == Signature"(su)"
   check val.data.struct.len == 2
-  check val.data.struct[0].asNative(string) == "hi"
-  check val.data.struct[1].asNative(uint32) == 2
+  check val.data.struct[0].get(string) == "hi"
+  check val.data.struct[1].get(uint32) == 2
 
 test "tables":
   let val = testEcho(@{"a":"b"})
-  check signatureOf(val).code == scArray
-  check val.data.array.typ.code == scDictEntry
-  check val.data.array.values[0].data.dictEntry.value.key.asNative(string) == "a"
-  check val.data.array.values[0].data.dictEntry.value.value.asNative(string) == "b"
+  check signatureOf(val) == Signature"a{ss}"
+  check val.get(seq[(string, string)]) == @{"a": "b"}
 
 test "tables nested":
   let val = testEcho(@{
-    "a": newVariant(@{
+    "a": @{
       "c":"d"
-    })
+    }
   })
-  check signatureOf(val).code == scArray
-  check val.data.array.values[0].data.dictEntry.value.key.asNative(string) == "a"
-  check val.data.array.values[0].data.dictEntry.value.value.data.array.values[0].data.dictEntry.value.key.data.string == "c"
-  check val.data.array.values[0].data.dictEntry.value.value.data.array.values[0].data.dictEntry.value.value.data.string == "d"
-
-test "tables nested":
-  let val = testEcho(@{
-    "a": newVariant(@{
-      "c":"d"
-    })
-  })
-  check signatureOf(val).code == scArray
-  check val.data.array.values[0].data.dictEntry.value.key.asNative(string) == "a"
-  check val.data.array.values[0].data.dictEntry.value.value.data.array.values[0].data.dictEntry.value.key.data.string == "c"
-  check val.data.array.values[0].data.dictEntry.value.value.data.array.values[0].data.dictEntry.value.value.data.string == "d"
+  check signatureOf(val) == Signature"a{sa{ss}}"
+  check val.get(seq[(string, seq[(string, string)])]) == @{
+    "a": @{
+      "c": "d",
+    }
+  }
 
 test "tables mixed variant":
-  let var1 = newVariant("foo")
-  let var2 = newVariant(12.uint32)
-  var dict = Variant(
-    typ: Signature("a{sv}"),
-    data: VariantData(
-      array: ArrayData(
-        typ: Signature("{sv}"),
-        values: @[
-          newVariant(("a", var1)),
-          newVariant(("b", var2)),
-        ]
-      )
-    )
-  )
-  let val = testEcho(dict)
-  check signatureOf(val).code == scArray
-  check val.data.array.values[0].data.dictEntry.value.key.asNative(string) == "a"
-  check val.data.array.values[0].data.dictEntry.value.value.data.string == "foo"
-  check val.data.array.values[1].data.dictEntry.value.key.asNative(string) == "b"
-  check val.data.array.values[1].data.dictEntry.value.value.data.uint32 == 12
+  let val = testEcho(newVariant(@{
+    "a": newVariant("foo"),
+    "b": newVariant(12.uint32),
+  }))
+  check signatureOf(val) == Signature"a{sv}"
+  check val.get(seq[(string, Variant)]) == @{
+    "a": newVariant("foo"),
+    "b": newVariant(12.uint32),
+  }
 
 test "tables mixed variant":
-  # TODO: make a nicer syntax for this
   let val = testEcho(newVariant(@{
     "a": newVariant("foo"),
     "b": newVariant(@{
       "c": "d",
     })
   }))
-  check val.typ.code == scArray
-  check val.data.array.values[0].data.dictEntry.value.key.asNative(string) == "a"
-  check val.data.array.values[0].data.dictEntry.value.value.data.string == "foo"
-  check val.data.array.values[1].data.dictEntry.value.key.asNative(string) == "b"
-  check val.data.array.values[1].data.dictEntry.value.value.data.array.values[0].data.dictEntry.value.key.data.string == "c"
-  check val.data.array.values[1].data.dictEntry.value.value.data.array.values[0].data.dictEntry.value.value.data.string == "d"
+  check signatureOf(val) == Signature("a{sv}")
+  check val.get(seq[(string, Variant)]) == @{
+    "a": newVariant("foo"),
+    "b": newVariant(@{
+      "c": "d",
+    })
+  }
 
 test "notify":
   let bus = getBus(DBUS_BUS_SESSION)
