@@ -108,9 +108,7 @@ proc append*(iter: ptr DbusMessageIter; x: Signature) =
   iter.appendPtr(scSignature, addr str)
 
 proc append*[T](iter: ptr DbusMessageIter; x: seq[T]) =
-  iter.append ArrayData(
-    typ: T.sign,
-    values: x.map(newVariant))
+  iter.append newArrayData(x)
 
 proc append*(iter: ptr DbusMessageIter, val: Variant) =
   iter.withContainer(subIter, scVariant, val.typ):

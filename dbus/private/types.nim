@@ -226,168 +226,162 @@ proc sons*(s: Signature): seq[Signature] =
   of scDictEntry, scStruct:
     result = s.inner.split
 
-proc sign*(ch: SigCode): Signature =
+proc encode*(ch: SigCode): Signature =
   Signature($ch.serialize)
 
-proc initArraySignature*(itemType: Signature): Signature =
+proc encodeArray*(itemType: Signature): Signature =
   Signature("a" & string(itemType))
 
-proc initDictEntrySignature*(keyType: Signature, valueType: Signature): Signature =
+proc encodeDictEntry*(keyType: Signature, valueType: Signature): Signature =
   doAssert string(keyType)[0].code notin dbusContainerTypes
   Signature("{" & string(keyType) & string(valueType) & "}")
 
-proc initStructSignature*(itemTypes: seq[Signature]): Signature =
+proc encodeStruct*(itemTypes: seq[Signature]): Signature =
   Signature("(" & itemTypes.mapIt(string(it)).join("") & ")")
 
-proc sign*(native: typedesc[byte]): Signature =
-  scByte.sign
-proc sign*(native: byte): Signature =
-  scByte.sign
+proc encode*(native: typedesc[byte]): Signature =
+  encode(scByte)
+proc encode*(native: byte): Signature =
+  encode(scByte)
 
-proc sign*(native: typedesc[bool]): Signature =
-  scBool.sign
-proc sign*(native: bool): Signature =
-  scBool.sign
+proc encode*(native: typedesc[bool]): Signature =
+  encode(scBool)
+proc encode*(native: bool): Signature =
+  encode(scBool)
 
-proc sign*(native: typedesc[int16]): Signature =
-  scInt16.sign
-proc sign*(native: int16): Signature =
-  scInt16.sign
+proc encode*(native: typedesc[int16]): Signature =
+  encode(scInt16)
+proc encode*(native: int16): Signature =
+  encode(scInt16)
 
-proc sign*(native: typedesc[uint16]): Signature =
-  scUint16.sign
-proc sign*(native: uint16): Signature =
-  scUint16.sign
+proc encode*(native: typedesc[uint16]): Signature =
+  encode(scUint16)
+proc encode*(native: uint16): Signature =
+  encode(scUint16)
 
-proc sign*(native: typedesc[int32]): Signature =
-  scInt32.sign
-proc sign*(native: int32): Signature =
-  scInt32.sign
+proc encode*(native: typedesc[int32]): Signature =
+  encode(scInt32)
+proc encode*(native: int32): Signature =
+  encode(scInt32)
 
-proc sign*(native: typedesc[uint32]): Signature =
-  scUint32.sign
-proc sign*(native: uint32): Signature =
-  scUint32.sign
+proc encode*(native: typedesc[uint32]): Signature =
+  encode(scUint32)
+proc encode*(native: uint32): Signature =
+  encode(scUint32)
 
-proc sign*(native: typedesc[int64]): Signature =
-  scInt64.sign
-proc sign*(native: int64): Signature =
-  scInt64.sign
+proc encode*(native: typedesc[int64]): Signature =
+  encode(scInt64)
+proc encode*(native: int64): Signature =
+  encode(scInt64)
 
-proc sign*(native: typedesc[uint64]): Signature =
-  scUint64.sign
-proc sign*(native: uint64): Signature =
-  scUint64.sign
+proc encode*(native: typedesc[uint64]): Signature =
+  encode(scUint64)
+proc encode*(native: uint64): Signature =
+  encode(scUint64)
 
-proc sign*(native: typedesc[float64]): Signature =
-  scDouble.sign
-proc sign*(native: float64): Signature =
-  scDouble.sign
+proc encode*(native: typedesc[float64]): Signature =
+  encode(scDouble)
+proc encode*(native: float64): Signature =
+  encode(scDouble)
 
-proc sign*(native: typedesc[float32]): Signature =
-  scDouble.sign
-proc sign*(native: float32): Signature =
-  scDouble.sign
+proc encode*(native: typedesc[float32]): Signature =
+  encode(scDouble)
+proc encode*(native: float32): Signature =
+  encode(scDouble)
 
-proc sign*(native: typedesc[FD]): Signature =
-  scUnixFd.sign
-proc sign*(native: FD): Signature =
-  scUnixFd.sign
+proc encode*(native: typedesc[FD]): Signature =
+  encode(scUnixFd)
+proc encode*(native: FD): Signature =
+  encode(scUnixFd)
 
-proc sign*(native: typedesc[cstring]): Signature =
-  scString.sign
-proc sign*(native: cstring): Signature =
-  scString.sign
+proc encode*(native: typedesc[cstring]): Signature =
+  encode(scString)
+proc encode*(native: cstring): Signature =
+  encode(scString)
 
-proc sign*(native: typedesc[string]): Signature =
-  scString.sign
-proc sign*(native: string): Signature =
-  scString.sign
+proc encode*(native: typedesc[string]): Signature =
+  encode(scString)
+proc encode*(native: string): Signature =
+  encode(scString)
 
-proc sign*(native: typedesc[ObjectPath]): Signature =
-  scObjectPath.sign
-proc sign*(native: ObjectPath): Signature =
-  scObjectPath.sign
+proc encode*(native: typedesc[ObjectPath]): Signature =
+  encode(scObjectPath)
+proc encode*(native: ObjectPath): Signature =
+  encode(scObjectPath)
 
-proc sign*(native: typedesc[Signature]): Signature =
-  scSignature.sign
-proc sign*(native: Signature): Signature =
-  scSignature.sign
+proc encode*(native: typedesc[Signature]): Signature =
+  encode(scSignature)
+proc encode*(native: Signature): Signature =
+  encode(scSignature)
 
-proc sign*[T](native: typedesc[seq[T]]): Signature =
-  initArraySignature(T.sign)
-proc sign*[I: static int; T](native: typedesc[array[I, T]]): Signature =
-  initArraySignature(T.sign)
-proc sign*[T](native: openArray[T]): Signature =
-  initArraySignature(T.sign)
+proc encode*[T](native: typedesc[seq[T]]): Signature =
+  encodeArray(encode(T))
+proc encode*[I: static int; T](native: typedesc[array[I, T]]): Signature =
+  encodeArray(encode(T))
+proc encode*[T](native: openArray[T]): Signature =
+  encodeArray(encode(T))
 
-# TODO: check if it works
-proc sign*[T: object](native: typedesc[T]): Signature =
-  initStructSignature(T.fields.mapIt(it.typ.sign))
-proc sign*[T: object](native: T): Signature =
-  initStructSignature(T.fields.mapIt(it.typ.sign))
+proc encode*(native: typedesc[Variant]): Signature =
+  encode(scVariant)
+proc encode*(native: Variant): Signature =
+  encode(scVariant)
 
-proc sign*(native: typedesc[Variant]): Signature =
-  scVariant.sign
-proc sign*(native: Variant): Signature =
-  scVariant.sign
-
-proc sign*[K, V](native: typedesc[(K, V)]): Signature =
-  initDictEntrySignature(K.sign, V.sign)
-proc sign*[K, V](native: (K, V)): Signature =
-  initDictEntrySignature(K.sign, V.sign)
+proc encode*[K, V](native: typedesc[(K, V)]): Signature =
+  encodeDictEntry(encode(K), encode(V))
+proc encode*[K, V](native: (K, V)): Signature =
+  encodeDictEntry(encode(K), encode(V))
 
 proc newVariant*(value: byte): Variant =
   Variant(
-    typ: value.sign,
+    typ: encode(value),
     data: VariantData(byte: value)
   )
 
 proc newVariant*(value: bool): Variant =
   Variant(
-    typ: value.sign,
+    typ: encode(value),
     data: VariantData(bool: value)
   )
 
 proc newVariant*(value: int16): Variant =
   Variant(
-    typ: value.sign,
+    typ: encode(value),
     data: VariantData(int16: value)
   )
 
 proc newVariant*(value: uint16): Variant =
   Variant(
-    typ: value.sign,
+    typ: encode(value),
     data: VariantData(uint16: value)
   )
 
 proc newVariant*(value: int32): Variant =
   Variant(
-    typ: value.sign,
+    typ: encode(value),
     data: VariantData(int32: value)
   )
 
 proc newVariant*(value: uint32): Variant =
   Variant(
-    typ: value.sign,
+    typ: encode(value),
     data: VariantData(uint32: value)
   )
 
 proc newVariant*(value: int64): Variant =
   Variant(
-    typ: value.sign,
+    typ: encode(value),
     data: VariantData(int64: value)
   )
 
 proc newVariant*(value: uint64): Variant =
   Variant(
-    typ: value.sign,
+    typ: encode(value),
     data: VariantData(uint64: value)
   )
 
 proc newVariant*(value: float64): Variant =
   Variant(
-    typ: value.sign,
+    typ: encode(value),
     data: VariantData(float64: value)
   )
 proc newVariant*(value: float32): Variant =
@@ -395,13 +389,13 @@ proc newVariant*(value: float32): Variant =
 
 proc newVariant*(value: FD): Variant =
   Variant(
-    typ: value.sign,
+    typ: encode(value),
     data: VariantData(FD: value)
   )
 
 proc newVariant*(value: string): Variant =
   Variant(
-    typ: value.sign,
+    typ: encode(value),
     data: VariantData(string: value)
   )
 proc newVariant*(value: cstring): Variant =
@@ -409,45 +403,47 @@ proc newVariant*(value: cstring): Variant =
 
 proc newVariant*(value: ObjectPath): Variant =
   Variant(
-    typ: value.sign,
+    typ: encode(value),
     data: VariantData(ObjectPath: value)
   )
 
 proc newVariant*(value: Signature): Variant =
   Variant(
-    typ: value.sign,
+    typ: encode(value),
     data: VariantData(Signature: value)
   )
 
+proc newVariant*(value: Variant): Variant =
+  value
+
 proc newVariant*(value: ArrayData): Variant =
   Variant(
-    typ: initArraySignature(value.typ),
+    typ: encodeArray(value.typ),
     data: VariantData(array: value),
   )
 
-proc newVariant*[T](value: openArray[T]): Variant =
-  newVariant(ArrayData(
-    typ: T.sign,
-    values: value.mapIt(newVariant(it)),
-  ))
-
-proc newVariant*[T: object](value: T): Variant =
-  Variant(
-    typ: value.sign,
-    data: VariantData(struct: value.fields.mapIt(newVariant(it)))
-  )
-
-proc newVariant*(value: Variant): Variant =
-  `=dup`(value)
-
 proc newVariant*(value: DictEntryData): Variant =
   Variant(
-    typ: initDictEntrySignature(value.typ.key, value.typ.value),
+    typ: encodeDictEntry(value.typ.key, value.typ.value),
     data: VariantData(dictEntry: value),
   )
 
+proc newArrayData*[T](s: openArray[T]): ArrayData
+proc newVariant*[T](value: openArray[T]): Variant =
+  newVariant(newArrayData(value))
+
+proc newDictEntryData*[K, V](value: (K, V)): DictEntryData
 proc newVariant*[K, V](value: (K, V)): Variant =
-  newVariant(DictEntryData(
-    typ: (K.sign, V.sign),
+  newVariant(newDictEntryData(value))
+
+proc newArrayData*[T](s: openArray[T]): ArrayData =
+  ArrayData(
+    typ: encode(T),
+    values: s.map(newVariant)
+  )
+
+proc newDictEntryData*[K, V](value: (K, V)): DictEntryData =
+  DictEntryData(
+    typ: (encode(K), encode(V)),
     value: (newVariant(value[0]), newVariant(value[1]))
-  ))
+  )
