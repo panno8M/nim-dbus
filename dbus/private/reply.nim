@@ -165,4 +165,4 @@ proc unpackCurrent(iter: var InputIter): Variant =
 proc unpackCurrent*(iter: var InputIter, Expected: typedesc[Variant]): Variant =
   unpackCurrent(iter)
 proc unpackCurrent*[T](iter: var InputIter, Expected: typedesc[T]): T =
-  unpackCurrent(iter).get(Expected)
+  unpackCurrent(iter).decode(Expected)

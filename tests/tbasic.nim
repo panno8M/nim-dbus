@@ -60,7 +60,7 @@ test "basic":
   
   var it = reply.iterate
   let v = it.unpackCurrent(Variant)
-  check v.get(string) == "Hello, world!"
+  check v.decode(string) == "Hello, world!"
   it.advanceIter
   check it.unpackCurrent(uint32) == 6
 
@@ -88,8 +88,8 @@ test "struct":
     ])))
   check signatureOf(val) == Signature"(su)"
   check val.data.struct.len == 2
-  check val.data.struct[0].get(string) == "hi"
-  check val.data.struct[1].get(uint32) == 2
+  check val.data.struct[0].decode(string) == "hi"
+  check val.data.struct[1].decode(uint32) == 2
 
 test "tables":
   simpleTest(Signature"a{ss}"):

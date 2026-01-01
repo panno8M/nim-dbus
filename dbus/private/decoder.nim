@@ -51,60 +51,60 @@ macro decode*(sig: static Signature): typedesc =
     error "Invalid signature: Contains multiple types"
   decodeSignature(sig)
 
-proc get*(value: Variant; native: typedesc[Variant]): Variant =
+proc decode*(value: Variant; native: typedesc[Variant]): Variant =
   value
 
-proc get*(value: Variant, native: typedesc[bool]): bool =
+proc decode*(value: Variant, native: typedesc[bool]): bool =
   value.data.bool
 
-proc get*(value: Variant, native: typedesc[float64]): float64 =
+proc decode*(value: Variant, native: typedesc[float64]): float64 =
   value.data.float64
 
-proc get*(value: Variant, native: typedesc[int16]): int16 =
+proc decode*(value: Variant, native: typedesc[int16]): int16 =
   value.data.int16
 
-proc get*(value: Variant, native: typedesc[int32]): int32 =
+proc decode*(value: Variant, native: typedesc[int32]): int32 =
   value.data.int32
 
-proc get*(value: Variant, native: typedesc[int64]): int64 =
+proc decode*(value: Variant, native: typedesc[int64]): int64 =
   value.data.int64
 
-proc get*(value: Variant, native: typedesc[uint16]): uint16 =
+proc decode*(value: Variant, native: typedesc[uint16]): uint16 =
   value.data.uint16
 
-proc get*(value: Variant, native: typedesc[uint32]): uint32 =
+proc decode*(value: Variant, native: typedesc[uint32]): uint32 =
   value.data.uint32
 
-proc get*(value: Variant, native: typedesc[uint64]): uint64 =
+proc decode*(value: Variant, native: typedesc[uint64]): uint64 =
   value.data.uint64
 
-proc get*(value: Variant, native: typedesc[uint8]): uint8 =
+proc decode*(value: Variant, native: typedesc[uint8]): uint8 =
   value.data.byte
 
-proc get*(value: Variant, native: typedesc[string]): string =
+proc decode*(value: Variant, native: typedesc[string]): string =
   value.data.string
 
-proc get*(value: Variant, native: typedesc[ObjectPath]): ObjectPath =
+proc decode*(value: Variant, native: typedesc[ObjectPath]): ObjectPath =
   value.data.ObjectPath
 
-proc get*(value: Variant, native: typedesc[Signature]): Signature =
+proc decode*(value: Variant, native: typedesc[Signature]): Signature =
   value.data.Signature
 
-proc get*(value: Variant; native: typedesc[FD]): FD =
+proc decode*(value: Variant; native: typedesc[FD]): FD =
   value.data.FD
 
-proc get*(value: Variant; native: typedesc[seq[Variant]]): seq[Variant] =
+proc decode*(value: Variant; native: typedesc[seq[Variant]]): seq[Variant] =
   value.data.array.values
 
-proc get*[T](value: Variant, native: typedesc[seq[T]]): seq[T] =
-  value.data.array.values.mapIt(it.get(T))
+proc decode*[T](value: Variant, native: typedesc[seq[T]]): seq[T] =
+  value.data.array.values.mapIt(it.decode(T))
 
-proc get*(value: Variant, native: typedesc[(Variant, Variant)]): tuple[key: Variant, value: Variant] =
+proc decode*(value: Variant, native: typedesc[(Variant, Variant)]): tuple[key: Variant, value: Variant] =
   value.data.dictEntry
 
-proc get*[T, K](value: Variant, native: typedesc[(T, K)]): tuple[key: T, value: K] =
+proc decode*[T, K](value: Variant, native: typedesc[(T, K)]): tuple[key: T, value: K] =
   let (key, value) = value.data.dictEntry.value
-  (key.get(T), value.get(K))
+  (key.decode(T), value.decode(K))
 
 template decode*(value: Variant; sig: static Signature): untyped =
-  value.get(decode(sig))
+  value.decode(decode(sig))
