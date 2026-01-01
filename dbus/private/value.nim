@@ -1,40 +1,55 @@
-
-proc `$`*(val: Variant): string =
-  case val.typ.code
-  of scNull, scVariant:
-    result.add("<null>")
-  of scArray:
-    result.add($val.data.array)
+proc decodeSignature(sig: Signature): NimNode =
+  case sig.code
   of scBool:
-    result.add($val.data.bool)
-  of scDictEntry:
-    result.add($val.data.dictEntry.value.key & ':' & $val.data.dictEntry.value.value)
-  of scDouble:
-    result.add($val.data.float64)
-  of scSignature:
-    result.add(val.data.Signature.string)
-  of scUnixFd:
-    result.add($val.data.FD)
-  of scInt32:
-    result.add($val.data.int32)
-  of scInt16:
-    result.add($val.data.int16)
-  of scObjectPath:
-    result.add(val.data.ObjectPath.string)
-  of scUint16:
-    result.add($val.data.uint16)
-  of scString:
-    result.add(val.data.string)
-  of scStruct:
-    result.add($val.data.struct)
-  of scUint64:
-    result.add($val.data.uint64)
-  of scUint32:
-    result.add($val.data.uint32)
-  of scInt64:
-    result.add($val.data.int64)
+    bindSym"bool"
   of scByte:
-    result.add($val.data.byte)
+    bindSym"byte"
+  of scInt16:
+    bindSym"int16"
+  of scUint16:
+    bindSym"uint16"
+  of scInt32:
+    bindSym"int32"
+  of scUint32:
+    bindSym"uint32"
+  of scInt64:
+    bindSym"int64"
+  of scUint64:
+    bindSym"uint64"
+  of scDouble:
+    bindSym"float64"
+  of scUnixFd:
+    bindSym"FD"
+  of scString:
+    bindSym"string"
+  of scObjectPath:
+    bindSym"ObjectPath"
+  of scSignature:
+    bindSym"Signature"
+  of scVariant:
+    bindSym"Variant"
+  of scDictEntry:
+    let sons = sig.sons
+    let key = decodeSignature(sons[0])
+    let val = decodeSignature(sons[1])
+    quote do:
+      (`key`, `val`)
+  of scArray:
+    let sons = sig.sons
+    let item = decodeSignature(sons[0])
+    quote do:
+      seq[`item`]
+  of scStruct:
+    let sons = sig.sons
+    let fields = sons.map(decodeSignature)
+    nnkTupleConstr.newTree(fields)
+  else:
+    error "Invalid signature: undefined"
+
+macro decode*(sig: static Signature): typedesc =
+  if sig.split.len != 1:
+    error "Invalid signature: Contains multiple types"
+  decodeSignature(sig)
 
 proc get*(value: Variant; native: typedesc[Variant]): Variant =
   value
@@ -90,3 +105,6 @@ proc get*(value: Variant, native: typedesc[(Variant, Variant)]): tuple[key: Vari
 proc get*[T, K](value: Variant, native: typedesc[(T, K)]): tuple[key: T, value: K] =
   let (key, value) = value.data.dictEntry.value
   (key.get(T), value.get(K))
+
+template decode*(value: Variant; sig: static Signature): untyped =
+  value.get(decode(sig))

@@ -64,20 +64,19 @@ test "basic":
   it.advanceIter
   check it.unpackCurrent(uint32) == 6
 
+template simpleTest(sig: Signature; value) =
+  let val = value
+  let res = testEcho(val)
+  check signatureOf(res) == sig
+  check res.decode(sig) == val
+
 test "int":
-  let val = testEcho(uint32(6))
-  check signatureOf(val) == Signature"u"
-  check val.get(uint32) == 6
+  simpleTest(Signature"u"):
+    6'u32
 
 test "arrays":
-  let val = testEcho(@["a", "b"])
-  check signatureOf(val) == Signature"as"
-  check val.get(seq[string]) == @["a", "b"]
-
-test "variant":
-  let val = testEcho(newVariant("hi"))
-  check signatureOf(val) == Signature"s"
-  check val.get(string) == "hi"
+  simpleTest(Signature"as"):
+    @["a", "b"]
 
 test "struct":
   let val = testEcho(Variant(
@@ -93,48 +92,32 @@ test "struct":
   check val.data.struct[1].get(uint32) == 2
 
 test "tables":
-  let val = testEcho(@{"a":"b"})
-  check signatureOf(val) == Signature"a{ss}"
-  check val.get(seq[(string, string)]) == @{"a": "b"}
+  simpleTest(Signature"a{ss}"):
+    @{"a":"b"}
 
 test "tables nested":
-  let val = testEcho(@{
-    "a": @{
-      "c":"d"
+  simpleTest(Signature"a{sa{ss}}"):
+    @{
+      "a": @{
+        "c":"d"
+      }
     }
-  })
-  check signatureOf(val) == Signature"a{sa{ss}}"
-  check val.get(seq[(string, seq[(string, string)])]) == @{
-    "a": @{
-      "c": "d",
-    }
-  }
 
 test "tables mixed variant":
-  let val = testEcho(newVariant(@{
-    "a": newVariant("foo"),
-    "b": newVariant(12.uint32),
-  }))
-  check signatureOf(val) == Signature"a{sv}"
-  check val.get(seq[(string, Variant)]) == @{
-    "a": newVariant("foo"),
-    "b": newVariant(12.uint32),
-  }
+  simpleTest(Signature"a{sv}"):
+    @{
+      "a": newVariant("foo"),
+      "b": newVariant(12.uint32),
+    }
 
 test "tables mixed variant":
-  let val = testEcho(newVariant(@{
-    "a": newVariant("foo"),
-    "b": newVariant(@{
-      "c": "d",
-    })
-  }))
-  check signatureOf(val) == Signature("a{sv}")
-  check val.get(seq[(string, Variant)]) == @{
-    "a": newVariant("foo"),
-    "b": newVariant(@{
-      "c": "d",
-    })
-  }
+  simpleTest(Signature"a{sv}"):
+    @{
+      "a": newVariant("foo"),
+      "b": newVariant(@{
+        "c": "d",
+      })
+    }
 
 test "notify":
   let bus = getBus(DBUS_BUS_SESSION)

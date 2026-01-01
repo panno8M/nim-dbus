@@ -1,4 +1,4 @@
-import strutils, sequtils
+import strutils, sequtils, macros
 
 type ObjectPath* = distinct string
 # TODO: validate Signature runes
@@ -447,3 +447,40 @@ proc newDictEntryData*[K, V](value: (K, V)): DictEntryData =
     typ: (encode(K), encode(V)),
     value: (newVariant(value[0]), newVariant(value[1]))
   )
+
+proc `$`*(val: Variant): string =
+  case val.typ.code
+  of scNull, scVariant:
+    result.add("<null>")
+  of scArray:
+    result.add($val.data.array)
+  of scBool:
+    result.add($val.data.bool)
+  of scDictEntry:
+    result.add($val.data.dictEntry.value.key & ':' & $val.data.dictEntry.value.value)
+  of scDouble:
+    result.add($val.data.float64)
+  of scSignature:
+    result.add(val.data.Signature.string)
+  of scUnixFd:
+    result.add($val.data.FD)
+  of scInt32:
+    result.add($val.data.int32)
+  of scInt16:
+    result.add($val.data.int16)
+  of scObjectPath:
+    result.add(val.data.ObjectPath.string)
+  of scUint16:
+    result.add($val.data.uint16)
+  of scString:
+    result.add(val.data.string)
+  of scStruct:
+    result.add($val.data.struct)
+  of scUint64:
+    result.add($val.data.uint64)
+  of scUint32:
+    result.add($val.data.uint32)
+  of scInt64:
+    result.add($val.data.int64)
+  of scByte:
+    result.add($val.data.byte)
