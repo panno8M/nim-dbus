@@ -14,11 +14,13 @@ proc helloAsync*(dbusIface: ComZielmichaTestRemote, num: uint32, sss: string): P
 
 proc helloGetReply*(reply: Message): tuple[salutation: string, retnum: uint32] =
   reply.raiseIfError
-  var iter = reply.iterate
-  result.salutation = iter.decode(string)
-  iter.advanceIter
-  result.retnum = iter.decode(uint32)
-  iter.ensureEnd
+  for i, iter in reply.iterate:
+    case i
+    of 0:
+      result.salutation = iter.decode(string)
+    of 1:
+      result.retnum = iter.decode(uint32)
+    else: discard
 
 proc hello*(dbusIface: ComZielmichaTestRemote, num: uint32, sss: string): tuple[salutation: string, retnum: uint32] =
   let reply = helloAsync(dbusIface, num, sss).waitForReply()

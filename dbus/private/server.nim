@@ -43,15 +43,8 @@ proc interfaceName*(incoming: Message): string =
   $dbus_message_get_interface(incoming.raw)
 
 proc unpackValueSeq*(incoming: Message): seq[Variant] =
-  var iter: InputIter
-  if dbus_message_iter_init(incoming.raw, addr iter.iter) == 0:
-    return @[]
-
-  result = @[]
-  while true:
+  for i, iter in incoming.iterate:
     result.add iter.decode(Variant)
-    if dbus_message_iter_next(addr iter.iter) == 0:
-      break
 
 # VTABLE
 

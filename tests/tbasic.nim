@@ -31,12 +31,13 @@ proc testEcho[T](val: T): Variant =
   let reply = pending.waitForReply()
   reply.raiseIfError()
 
-  var it = reply.iterate
-  # let v = it.unpackCurrent(DbusValue)
-  # check v.asNative(string) == "Hello, world!"
-  it.advanceIter
-  return it.decode(Variant)
-
+  for i, iter in reply.iterate:
+    case i
+    of 0:
+      check iter.decode(string) == "Hello, world!"
+    of 1:
+      return iter.decode(Variant)
+    else: discard
 
 test "basic":
   let bus = getBus(dbus.DBUS_BUS_SESSION)
@@ -58,11 +59,14 @@ test "basic":
   let reply = pending.waitForReply()
   reply.raiseIfError()
   
-  var it = reply.iterate
-  let v = it.decode(Variant)
-  check v.decode(string) == "Hello, world!"
-  it.advanceIter
-  check it.decode(uint32) == 6
+  for i, iter in reply.iterate:
+    case i
+    of 0:
+      check iter.decode(string) == "Hello, world!"
+    of 1:
+      check iter.decode(uint32) == 6
+    else:
+      discard
 
 template simpleTest(sig: Signature; value) =
   let val = value
