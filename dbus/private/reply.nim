@@ -1,48 +1,33 @@
 
-type Reply* = object
-  msg: ptr DBusMessage
 
-type ReplyType* = enum
-  rtInvalid = 0, rtMethodCall = 1, rtMethodReturn = 2,
-  rtError = 3, rtSignal = 4
+proc raiseIfError*(msg: Message) =
+  if msg of ErrorMessage:
+    let err = ErrorMessage(msg)
+    raise newException(DbusRemoteException, err.name & ": " & err.message)
 
-proc replyFromMessage*(msg: ptr DbusMessage): Reply =
-  result.msg = msg
-
-proc type*(reply: Reply): ReplyType =
-  return dbus_message_get_type(reply.msg).ReplyType
-
-proc errorName*(reply: Reply): string =
-  return $dbus_message_get_error_name(reply.msg)
-
-proc errorMessage*(reply: Reply): string =
-  var error: DBusError
-  doAssert(dbus_set_error_from_message(addr error, reply.msg))
-  defer: dbus_error_free(addr error)
-  return $error.message
-
-proc raiseIfError*(reply: Reply) =
-  if reply.type == rtError:
-    raise newException(DbusRemoteException, reply.errorName & ": " & reply.errorMessage)
-
-proc waitForReply*(call: PendingCall): Reply =
+proc waitForReply*(call: PendingCall): Message =
   call.bus.flush()
   dbus_pending_callblock(call.call)
-  result.msg = dbus_pending_call_steal_reply(call.call)
-
-  defer: dbus_pending_call_unref(call.call)
-
-  if result.msg == nil:
+  var msg = dbus_pending_call_steal_reply(call.call)
+  result = case msg.type
+  of mtMethodCall:
+    MethodCallMessage(raw: msg)
+  of mtMethodReturn:
+    MethodReturnMessage(raw: msg)
+  of mtError:
+    ErrorMessage(raw: msg)
+  of mtSignal:
+    SignalMessage(raw: msg)
+  of mtInvalid:
     raise newException(DbusException, "dbus_pending_call_steal_reply")
 
-proc close*(reply: Reply) =
-  dbus_message_unref(reply.msg)
+  defer: dbus_pending_call_unref(call.call)
 
 type InputIter* = object
   iter: DbusMessageIter
 
-proc iterate*(reply: Reply): InputIter =
-  if dbus_message_iter_init(reply.msg, addr result.iter) == 0:
+proc iterate*(msg: Message): InputIter =
+  if dbus_message_iter_init(msg.raw, addr result.iter) == 0:
     raise newException(DbusException, "dbus_message_iter_init")
 
 proc advanceIter*(iter: var InputIter) =

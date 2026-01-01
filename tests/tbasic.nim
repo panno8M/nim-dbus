@@ -20,14 +20,14 @@ proc testEcho[T](val: T): Variant =
   ## service and returns the echoed value.  Useful for testing
   ## that values can be sent and retrieved through the bus
   let bus = getBus(dbus.DBUS_BUS_SESSION)
-  var msg = makeCall(TEST_BUSNAME,
+  var msg = newMethodCallMessage(TEST_BUSNAME,
               TEST_OBJECTPATH,
               TEST_INTERFACE,
               TEST_METHOD)
 
   msg.append(val)
 
-  let pending = bus.sendMessageWithReply(msg)
+  let pending = bus.sendWithReply(msg)
   let reply = pending.waitForReply()
   reply.raiseIfError()
 
@@ -40,7 +40,7 @@ proc testEcho[T](val: T): Variant =
 
 test "basic":
   let bus = getBus(dbus.DBUS_BUS_SESSION)
-  var msg = makeCall(TEST_BUSNAME,
+  var msg = newMethodCallMessage(TEST_BUSNAME,
               TEST_OBJECTPATH,
               TEST_INTERFACE,
               TEST_METHOD)
@@ -54,7 +54,7 @@ test "basic":
   msg.append(ObjectPath("/a"))
   msg.append(@[ObjectPath("/b")])
   
-  let pending = bus.sendMessageWithReply(msg)
+  let pending = bus.sendWithReply(msg)
   let reply = pending.waitForReply()
   reply.raiseIfError()
   
@@ -121,7 +121,7 @@ test "tables mixed variant":
 
 test "notify":
   let bus = getBus(DBUS_BUS_SESSION)
-  var msg = makeCall("org.freedesktop.Notifications",
+  var msg = newMethodCallMessage("org.freedesktop.Notifications",
               ObjectPath("/org/freedesktop/Notifications"),
               "org.freedesktop.Notifications",
               "Notify")
@@ -135,5 +135,5 @@ test "notify":
   msg.append(@{"urgency": newVariant(1'u8)})
   msg.append(-1'i32)
 
-  let pending = bus.sendMessage(msg)
+  let pending = bus.send(msg)
 

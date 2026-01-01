@@ -7,12 +7,12 @@ proc get*(wrapperType: typedesc[ComZielmichaTestRemote], uniqueBus: UniqueBus, p
 
 
 proc helloAsync*(dbusIface: ComZielmichaTestRemote, num: uint32, sss: string): PendingCall =
-  let msg = makeCall(dbusIface.uniqueBus.uniqueName, dbusIface.path, "com.zielmicha.test", "hello")
+  let msg = newMethodCallMessage(dbusIface.uniqueBus.uniqueName, dbusIface.path, "com.zielmicha.test", "hello")
   msg.append(num)
   msg.append(sss)
-  return dbusIface.uniqueBus.bus.sendMessageWithReply(msg)
+  return dbusIface.uniqueBus.bus.sendWithReply(msg)
 
-proc helloGetReply*(reply: Reply): tuple[salutation: string, retnum: uint32] =
+proc helloGetReply*(reply: Message): tuple[salutation: string, retnum: uint32] =
   reply.raiseIfError
   var iter = reply.iterate
   result.salutation = iter.decode(string)
@@ -22,6 +22,5 @@ proc helloGetReply*(reply: Reply): tuple[salutation: string, retnum: uint32] =
 
 proc hello*(dbusIface: ComZielmichaTestRemote, num: uint32, sss: string): tuple[salutation: string, retnum: uint32] =
   let reply = helloAsync(dbusIface, num, sss).waitForReply()
-  defer: reply.close()
   return helloGetReply(reply)
 
