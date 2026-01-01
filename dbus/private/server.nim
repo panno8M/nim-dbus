@@ -31,9 +31,10 @@ proc registerObject(bus: Bus, path: ObjectPath,
 # TYPES
 
 type
-  MessageCallback* = proc(incoming: Message): bool
+  MessageCallback* = proc(bus: Bus; incoming: Message): bool
 
   PackedMessageCallback = ref object
+    bus: Bus
     callback: MessageCallback
 
 proc name*(incoming: Message): string =
@@ -62,7 +63,8 @@ proc messageFunc(connection: ptr DBusConnection, message: ptr DBusMessage, user_
   else:
     raise newException(DbusException, "unknown message(" & $rawType & ")")
 
-  let ok = cast[PackedMessageCallback](userData).callback(msg)
+  let packed = cast[PackedMessageCallback](userData)
+  let ok = packed.callback(packed.bus, msg)
   if ok:
     return DBUS_HANDLER_RESULT_HANDLED
   else:
@@ -74,6 +76,7 @@ proc unregisterFunc(connection: ptr DBusConnection, userData: pointer) {.cdecl.}
 proc registerObject*(bus: Bus, path: ObjectPath, callback: MessageCallback) =
   var packed: PackedMessageCallback
   new(packed)
+  packed.bus = bus
   packed.callback = callback
   GC_ref packed
 
