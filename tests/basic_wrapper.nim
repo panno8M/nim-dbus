@@ -15,9 +15,9 @@ proc helloAsync*(dbusIface: ComZielmichaTestRemote, num: uint32, sss: string): P
 proc helloGetReply*(reply: Reply): tuple[salutation: string, retnum: uint32] =
   reply.raiseIfError
   var iter = reply.iterate
-  result.salutation = iter.unpackCurrent(string)
+  result.salutation = iter.decode(string)
   iter.advanceIter
-  result.retnum = iter.unpackCurrent(uint32)
+  result.retnum = iter.decode(uint32)
   iter.ensureEnd
 
 proc hello*(dbusIface: ComZielmichaTestRemote, num: uint32, sss: string): tuple[salutation: string, retnum: uint32] =

@@ -62,98 +62,116 @@ proc sign(iter: var InputIter): Signature =
   result = Signature($cs)
   dbus_free(cs)
 
-proc unpackCurrent(iter: var InputIter): Variant =
+proc decode*(iter: var InputIter; _: typedesc[bool]): bool =
+  var b: dbus_bool_t
+  dbus_message_iter_get_basic(addr iter.iter, addr b)
+  bool(b)
+
+proc decode*(iter: var InputIter; _: typedesc[byte]): byte =
+  dbus_message_iter_get_basic(addr iter.iter, addr result)
+
+proc decode*(iter: var InputIter; _: typedesc[int16]): int16 =
+  dbus_message_iter_get_basic(addr iter.iter, addr result)
+
+proc decode*(iter: var InputIter; _: typedesc[uint16]): uint16 =
+  dbus_message_iter_get_basic(addr iter.iter, addr result)
+
+proc decode*(iter: var InputIter; _: typedesc[int32]): int32 =
+  dbus_message_iter_get_basic(addr iter.iter, addr result)
+
+proc decode*(iter: var InputIter; _: typedesc[uint32]): uint32 =
+  dbus_message_iter_get_basic(addr iter.iter, addr result)
+
+proc decode*(iter: var InputIter; _: typedesc[int64]): int64 =
+  dbus_message_iter_get_basic(addr iter.iter, addr result)
+
+proc decode*(iter: var InputIter; _: typedesc[uint64]): uint64 =
+  dbus_message_iter_get_basic(addr iter.iter, addr result)
+
+proc decode*(iter: var InputIter; _: typedesc[float64]): float64 =
+  dbus_message_iter_get_basic(addr iter.iter, addr result)
+
+proc decode*(iter: var InputIter; _: typedesc[FD]): FD =
+  dbus_message_iter_get_basic(addr iter.iter, addr result)
+
+proc decode*(iter: var InputIter; _: typedesc[string]): string =
+  var s: cstring
+  dbus_message_iter_get_basic(addr iter.iter, addr s)
+  $s
+
+proc decode*(iter: var InputIter; _: typedesc[ObjectPath]): ObjectPath =
+  ObjectPath(iter.decode(string))
+
+proc decode*(iter: var InputIter; _: typedesc[Signature]): Signature =
+  Signature(iter.decode(string))
+
+proc decode*(iter: var InputIter; _: typedesc[DictEntryData]): DictEntryData =
+  var subiter = iter.subIterate()
+  let key = subiter.decode(Variant)
+  let keysign = subiter.sign
+  subiter.advanceIter()
+  let val = subiter.decode(Variant)
+  let valsign = subiter.sign
+  subiter.ensureEnd()
+  DictEntryData(
+    typ: (keysign, valsign),
+    value: (key, val),
+  )
+
+proc decode*(iter: var InputIter; _: typedesc[ArrayData]): ArrayData =
+  var subiter = iter.subIterate()
+  var subsign = subiter.sign
+  var values: seq[Variant]
+  while true:
+    values.add(subiter.decode(Variant))
+    if dbus_message_iter_has_next(addr subiter.iter) == 0:
+      break
+    subiter.advanceIter()
+  ArrayData(
+    typ: subsign,
+    values: values,
+  )
+
+proc decode*(iter: var InputIter; _: typedesc[Variant]): Variant =
   let kind = dbus_message_iter_get_arg_type(addr iter.iter).char.code
   case kind:
   of scNull:
     raise newException(DbusException, "cannot unpack null value")
   of scBool:
-    var b: dbus_bool_t
-    dbus_message_iter_get_basic(addr iter.iter, addr b)
-    return newVariant(bool b)
+    return newVariant(iter.decode(bool))
   of scByte:
-    var b: byte
-    dbus_message_iter_get_basic(addr iter.iter, addr b)
-    return newVariant(b)
+    return newVariant(iter.decode(byte))
   of scInt16:
-    var i: int16
-    dbus_message_iter_get_basic(addr iter.iter, addr i)
-    return newVariant(i)
+    return newVariant(iter.decode(int16))
   of scUint16:
-    var u: uint16
-    dbus_message_iter_get_basic(addr iter.iter, addr u)
-    return newVariant(u)
+    return newVariant(iter.decode(uint16))
   of scInt32:
-    var i: int32
-    dbus_message_iter_get_basic(addr iter.iter, addr i)
-    return newVariant(i)
+    return newVariant(iter.decode(int32))
   of scUint32:
-    var u: uint32
-    dbus_message_iter_get_basic(addr iter.iter, addr u)
-    return newVariant(u)
+    return newVariant(iter.decode(uint32))
   of scInt64:
-    var i: int64
-    dbus_message_iter_get_basic(addr iter.iter, addr i)
-    return newVariant(i)
+    return newVariant(iter.decode(int64))
   of scUint64:
-    var u: uint64
-    dbus_message_iter_get_basic(addr iter.iter, addr u)
-    return newVariant(u)
+    return newVariant(iter.decode(uint64))
   of scDouble:
-    var d: float64
-    dbus_message_iter_get_basic(addr iter.iter, addr d)
-    return newVariant(d)
+    return newVariant(iter.decode(float64))
   of scUnixFd:
-    var fd: FD
-    dbus_message_iter_get_basic(addr iter.iter, addr fd)
-    return newVariant(fd)
+    return newVariant(iter.decode(FD))
   of scString:
-    var s: cstring
-    dbus_message_iter_get_basic(addr iter.iter, addr s)
-    return newVariant($s)
+    return newVariant(iter.decode(string))
   of scObjectPath:
-    var s: cstring
-    dbus_message_iter_get_basic(addr iter.iter, addr s)
-    return newVariant(ObjectPath($s))
+    return newVariant(iter.decode(ObjectPath))
   of scSignature:
-    var s: cstring
-    dbus_message_iter_get_basic(addr iter.iter, addr s)
-    return newVariant(Signature($s))
-  of scVariant:
-    var subiter = iter.subIterate()
-    let val = subiter.unpackCurrent()
-    subiter.ensureEnd()
-    return val
+    return newVariant(iter.decode(Signature))
   of scDictEntry:
-    var subiter = iter.subIterate()
-    let key = subiter.unpackCurrent()
-    let keysign = subiter.sign
-    subiter.advanceIter()
-    let val = subiter.unpackCurrent()
-    let valsign = subiter.sign
-    subiter.ensureEnd()
-    return newVariant(DictEntryData(
-      typ: (keysign, valsign),
-      value: (key, val)
-    ))
+    return newVariant(iter.decode(DictEntryData))
   of scArray:
-    var subiter = iter.subIterate()
-    var subsign = subiter.sign
-    var values: seq[Variant]
-    while true:
-      values.add(subiter.unpackCurrent())
-      if dbus_message_iter_has_next(addr subiter.iter) == 0:
-        break
-      subiter.advanceIter()
-    return newVariant(ArrayData(
-      typ: subsign,
-      values: values)
-    )
+    return newVariant(iter.decode(ArrayData))
   of scStruct:
     var subiter = iter.subIterate()
     var values:seq[Variant]
     while true:
-      values.add(subiter.unpackCurrent())
+      values.add(subiter.decode(Variant))
       if dbus_message_iter_has_next(addr subiter.iter) == 0:
         break
       subiter.advanceIter()
@@ -161,8 +179,8 @@ proc unpackCurrent(iter: var InputIter): Variant =
       typ: Signature("(" & values.mapIt(string(it.typ)).join("") & ")"),
       data: VariantData(struct: values)
     )
-
-proc unpackCurrent*(iter: var InputIter, Expected: typedesc[Variant]): Variant =
-  unpackCurrent(iter)
-proc unpackCurrent*[T](iter: var InputIter, Expected: typedesc[T]): T =
-  unpackCurrent(iter).decode(Expected)
+  of scVariant:
+    var subiter = iter.subIterate()
+    let val = subiter.decode(Variant)
+    subiter.ensureEnd()
+    return val

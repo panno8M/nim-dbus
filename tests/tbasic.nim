@@ -35,7 +35,7 @@ proc testEcho[T](val: T): Variant =
   # let v = it.unpackCurrent(DbusValue)
   # check v.asNative(string) == "Hello, world!"
   it.advanceIter
-  return it.unpackCurrent(Variant)
+  return it.decode(Variant)
 
 
 test "basic":
@@ -59,10 +59,10 @@ test "basic":
   reply.raiseIfError()
   
   var it = reply.iterate
-  let v = it.unpackCurrent(Variant)
+  let v = it.decode(Variant)
   check v.decode(string) == "Hello, world!"
   it.advanceIter
-  check it.unpackCurrent(uint32) == 6
+  check it.decode(uint32) == 6
 
 template simpleTest(sig: Signature; value) =
   let val = value

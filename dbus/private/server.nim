@@ -60,7 +60,7 @@ proc unpackValueSeq*(incoming: IncomingMessage): seq[Variant] =
 
   result = @[]
   while true:
-    result.add iter.unpackCurrent(Variant)
+    result.add iter.decode(Variant)
     if dbus_message_iter_next(addr iter.iter) == 0:
       break
 
