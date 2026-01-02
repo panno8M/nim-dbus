@@ -70,7 +70,7 @@ template simpleTest(sig: Signature; value) =
   let val = value
   let res = testEcho(val)
   check signatureOf(res) == sig
-  check res.decode(sig) == val
+  check res[sig] == val
 
 test "int":
   simpleTest(Signature"u"):
@@ -90,8 +90,8 @@ test "struct":
     ])))
   check signatureOf(val) == Signature"(su)"
   check val.data.struct.len == 2
-  check val.data.struct[0].decode(string) == "hi"
-  check val.data.struct[1].decode(uint32) == 2
+  check val.data.struct[0][string] == "hi"
+  check val.data.struct[1][uint32] == 2
 
 test "tables":
   simpleTest(Signature"a{ss}"):
