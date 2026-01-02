@@ -767,7 +767,11 @@ type
   DBusError* = object 
     name*: cstring            #*< public error name field 
     message*: cstring         #*< public error message field 
-    dummy5bits*: cuint        #*< placeholder 
+    dummy1*: cuint = 1        #*< placeholder 
+    dummy2*: cuint            #*< placeholder 
+    dummy3*: cuint            #*< placeholder 
+    dummy4*: cuint            #*< placeholder 
+    dummy5*: cuint            #*< placeholder 
     padding1*: pointer        #*< placeholder 
   
 

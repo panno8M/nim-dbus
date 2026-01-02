@@ -2,8 +2,8 @@
 
 proc raiseIfError*(msg: Message) =
   if msg of ErrorMessage:
-    let err = ErrorMessage(msg)
-    raise newException(DbusRemoteException, err.name & ": " & err.message)
+    DbusRemoteException.liftDbusError(err):
+      err = ErrorMessage(msg).getError
 
 proc waitForReply*(call: PendingCall): Message =
   call.bus.flush()

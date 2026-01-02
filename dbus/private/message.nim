@@ -56,14 +56,8 @@ proc newMethodReturnMessage*(methodCall: MethodCallMessage): MethodReturnMessage
 proc newErrorMessage*(methodCall: MethodCallMessage; name: string; message: string): ErrorMessage =
   ErrorMessage(raw: dbus_message_new_error(methodCall.raw, cstring(name), cstring(message)))
 
-proc name*(msg: ErrorMessage): string =
-  $dbus_message_get_error_name(msg.raw)
-
-proc message*(msg: ErrorMessage): string =
-  var error: DBusError
-  doAssert(dbus_set_error_from_message(addr error, msg.raw))
-  defer: dbus_error_free(addr error)
-  return $error.message
+proc getError*(msg: ErrorMessage): DBusError =
+  discard dbus_set_error_from_message(addr result, msg.raw)
 
 proc send*(conn: Bus, msg: Message): dbus_uint32_t {.discardable.} =
   if not bool(dbus_connection_send(conn.conn, msg.raw, addr result)):
