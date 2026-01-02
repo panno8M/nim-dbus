@@ -4,7 +4,8 @@ export lowlevel
 import dbus/errors
 import dbus/bus
 import dbus/types {.all.}
-import dbus/variants {.all.}
+import dbus/signatures {.all.}
+import dbus/variants
 
 import std/[sequtils, strutils, macros, importutils]
 

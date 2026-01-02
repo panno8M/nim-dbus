@@ -1,4 +1,5 @@
 import dbus/types
+import dbus/signatures
 
 import std/strutils, sequtils
 

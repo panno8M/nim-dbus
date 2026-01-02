@@ -1,4 +1,5 @@
 import dbus/types {.all.}
+import dbus/signatures {.all.}
 import dbus/typeencoder
 import std/importutils
 
