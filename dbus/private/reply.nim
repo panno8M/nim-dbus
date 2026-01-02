@@ -45,106 +45,106 @@ proc sign(iter: ref DbusMessageIter): Signature =
   result = Signature($cs)
   dbus_free(cs)
 
-proc decode*(iter: ref DbusMessageIter; _: typedesc[bool]): bool =
+proc `[]`*(iter: ref DbusMessageIter; _: typedesc[bool]): bool =
   var b: dbus_bool_t
   dbus_message_iter_get_basic(addr iter[], addr b)
   bool(b)
 
-proc decode*(iter: ref DbusMessageIter; _: typedesc[byte]): byte =
+proc `[]`*(iter: ref DbusMessageIter; _: typedesc[byte]): byte =
   dbus_message_iter_get_basic(addr iter[], addr result)
 
-proc decode*(iter: ref DbusMessageIter; _: typedesc[int16]): int16 =
+proc `[]`*(iter: ref DbusMessageIter; _: typedesc[int16]): int16 =
   dbus_message_iter_get_basic(addr iter[], addr result)
 
-proc decode*(iter: ref DbusMessageIter; _: typedesc[uint16]): uint16 =
+proc `[]`*(iter: ref DbusMessageIter; _: typedesc[uint16]): uint16 =
   dbus_message_iter_get_basic(addr iter[], addr result)
 
-proc decode*(iter: ref DbusMessageIter; _: typedesc[int32]): int32 =
+proc `[]`*(iter: ref DbusMessageIter; _: typedesc[int32]): int32 =
   dbus_message_iter_get_basic(addr iter[], addr result)
 
-proc decode*(iter: ref DbusMessageIter; _: typedesc[uint32]): uint32 =
+proc `[]`*(iter: ref DbusMessageIter; _: typedesc[uint32]): uint32 =
   dbus_message_iter_get_basic(addr iter[], addr result)
 
-proc decode*(iter: ref DbusMessageIter; _: typedesc[int64]): int64 =
+proc `[]`*(iter: ref DbusMessageIter; _: typedesc[int64]): int64 =
   dbus_message_iter_get_basic(addr iter[], addr result)
 
-proc decode*(iter: ref DbusMessageIter; _: typedesc[uint64]): uint64 =
+proc `[]`*(iter: ref DbusMessageIter; _: typedesc[uint64]): uint64 =
   dbus_message_iter_get_basic(addr iter[], addr result)
 
-proc decode*(iter: ref DbusMessageIter; _: typedesc[float64]): float64 =
+proc `[]`*(iter: ref DbusMessageIter; _: typedesc[float64]): float64 =
   dbus_message_iter_get_basic(addr iter[], addr result)
 
-proc decode*(iter: ref DbusMessageIter; _: typedesc[FD]): FD =
+proc `[]`*(iter: ref DbusMessageIter; _: typedesc[FD]): FD =
   dbus_message_iter_get_basic(addr iter[], addr result)
 
-proc decode*(iter: ref DbusMessageIter; _: typedesc[string]): string =
+proc `[]`*(iter: ref DbusMessageIter; _: typedesc[string]): string =
   var s: cstring
   dbus_message_iter_get_basic(addr iter[], addr s)
   $s
 
-proc decode*(iter: ref DbusMessageIter; _: typedesc[ObjectPath]): ObjectPath =
-  ObjectPath(iter.decode(string))
+proc `[]`*(iter: ref DbusMessageIter; _: typedesc[ObjectPath]): ObjectPath =
+  ObjectPath(iter[string])
 
-proc decode*(iter: ref DbusMessageIter; _: typedesc[Signature]): Signature =
-  Signature(iter.decode(string))
+proc `[]`*(iter: ref DbusMessageIter; _: typedesc[Signature]): Signature =
+  Signature(iter[string])
 
-proc decode*(iter: ref DbusMessageIter; _: typedesc[DictEntryData]): DictEntryData =
+proc `[]`*(iter: ref DbusMessageIter; _: typedesc[DictEntryData]): DictEntryData =
   var items: seq[tuple[sig: Signature, item: Variant]]
   for i, subiter in iter.iterate:
-    items.add (subiter.sign, subiter.decode(Variant))
+    items.add (subiter.sign, subiter[Variant])
   DictEntryData(
     typ: (items[0].sig, items[1].sig),
     value: (items[0].item, items[1].item),
   )
 
-proc decode*(iter: ref DbusMessageIter; _: typedesc[ArrayData]): ArrayData =
+proc `[]`*(iter: ref DbusMessageIter; _: typedesc[ArrayData]): ArrayData =
   var items: seq[Variant]
   for i, subiter in iter.iterate:
-    items.add subiter.decode(Variant)
+    items.add subiter[Variant]
   ArrayData(
     typ: Signature(string(iter.sign)[1..^1]),
     values: items,
   )
 
-proc decode*(iter: ref DbusMessageIter; _: typedesc[Variant]): Variant =
+proc `[]`*(iter: ref DbusMessageIter; _: typedesc[Variant]): Variant =
   let kind = dbus_message_iter_get_arg_type(addr iter[]).char.code
   case kind:
   of scNull:
     raise newException(DbusException, "cannot unpack null value")
   of scBool:
-    return newVariant(iter.decode(bool))
+    return newVariant(iter[bool])
   of scByte:
-    return newVariant(iter.decode(byte))
+    return newVariant(iter[byte])
   of scInt16:
-    return newVariant(iter.decode(int16))
+    return newVariant(iter[int16])
   of scUint16:
-    return newVariant(iter.decode(uint16))
+    return newVariant(iter[uint16])
   of scInt32:
-    return newVariant(iter.decode(int32))
+    return newVariant(iter[int32])
   of scUint32:
-    return newVariant(iter.decode(uint32))
+    return newVariant(iter[uint32])
   of scInt64:
-    return newVariant(iter.decode(int64))
+    return newVariant(iter[int64])
   of scUint64:
-    return newVariant(iter.decode(uint64))
+    return newVariant(iter[uint64])
   of scDouble:
-    return newVariant(iter.decode(float64))
+    return newVariant(iter[float64])
   of scUnixFd:
-    return newVariant(iter.decode(FD))
+    return newVariant(iter[FD])
   of scString:
-    return newVariant(iter.decode(string))
+    return newVariant(iter[string])
   of scObjectPath:
-    return newVariant(iter.decode(ObjectPath))
+    return newVariant(iter[ObjectPath])
   of scSignature:
-    return newVariant(iter.decode(Signature))
+    return newVariant(iter[Signature])
   of scDictEntry:
-    return newVariant(iter.decode(DictEntryData))
+    return newVariant(iter[DictEntryData])
   of scArray:
-    return newVariant(iter.decode(ArrayData))
+    return newVariant(iter[ArrayData])
   of scStruct:
     var items: seq[Variant]
     for i, subiter in iter.iterate:
-      items.add subiter.decode(Variant)
+      items.add subiter[Variant]
     return Variant(
       typ: Signature("(" & items.mapIt(string(it.typ)).join("") & ")"),
       data: VariantData(struct: items)
@@ -152,5 +152,5 @@ proc decode*(iter: ref DbusMessageIter; _: typedesc[Variant]): Variant =
   of scVariant:
     var item: Variant
     for i, subiter in iter.iterate:
-      item = subiter.decode(Variant)
+      item = subiter[Variant]
     return item

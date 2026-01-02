@@ -29,8 +29,8 @@ proc testEcho[T](val: T): Variant =
   let reply = pending.waitForReply()
   reply.raiseIfError()
 
-  check reply[0].decode(string) == "Hello, world!"
-  return reply[1].decode(Variant)
+  check reply[0][string] == "Hello, world!"
+  return reply[1][Variant]
 
 test "basic":
   let bus = getBus(dbus.DBUS_BUS_SESSION)
@@ -52,8 +52,8 @@ test "basic":
   let reply = pending.waitForReply()
   reply.raiseIfError()
   
-  check reply[0].decode(string) == "Hello, world!"
-  check reply[1].decode(uint32) == 6
+  check reply[0][string] == "Hello, world!"
+  check reply[1][uint32] == 6
 
 template simpleTest(sig: Signature; value) =
   let val = value
