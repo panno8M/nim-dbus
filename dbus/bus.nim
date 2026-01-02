@@ -1,16 +1,21 @@
 import dbus/lowlevel
 import dbus/errors
 
-type Bus* = ref object
-  conn*: ptr DBusConnection
+type
+  BusObj* = object
+    conn*: ptr DBusConnection
+  Bus* = ref BusObj
 
 type UniqueBus* = object
   bus*: Bus
   uniqueName*: string
 
-# we don't destroy the connection as dbus_bus_get returns shared pointer
-proc destroyConnection(bus: Bus) =
-  dbus_connection_close(bus.conn)
+proc `=destroy`*(bus: BusObj) =
+  dbus_connection_unref(bus.conn)
+proc `=copy`*(dst: var BusObj; src: BusObj) =
+  `=destroy` dst
+  wasMoved dst
+  dst.conn = dbus_connection_ref(src.conn)
 
 proc getBus*(busType: DBusBusType): Bus =
   doAssert dbus_threads_init_default() != 0 # enable threads
