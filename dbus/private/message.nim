@@ -155,7 +155,7 @@ proc append*[T](iter: ptr DbusMessageIter; x: seq[T]) =
   iter.append newArrayData(x)
 
 proc append*(iter: ptr DbusMessageIter, val: Variant) =
-  iter.withContainer(subIter, scVariant, val.typ):
+  iter.withContainer(subIter, scVariant, signatureOf(val)):
     (addr subIter).appendElement(val.typ, val)
 
 proc appendElement(iter: ptr DbusMessageIter; sign: Signature; x: Variant) =

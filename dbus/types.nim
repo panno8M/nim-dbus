@@ -1,4 +1,6 @@
-import strutils, sequtils, macros
+import dbus/errors
+
+import std/strutils, sequtils, macros
 
 type ObjectPath* = distinct string
 # TODO: validate Signature runes
@@ -96,11 +98,11 @@ proc code*(s: Signature): SigCode =
 
 type
   ArrayData = object
-    typ: Signature
-    values: seq[Variant]
+    typ*: Signature
+    values*: seq[Variant]
   DictEntryData = object
-    typ: tuple[key, value: Signature]
-    value: tuple[key, value: Variant]
+    typ*: tuple[key, value: Signature]
+    value*: tuple[key, value: Variant]
   VariantData {.union.} = ref object
     int64*: int64
     int32*: int32

@@ -1,13 +1,11 @@
 import unittest
 
-when false:
-  import dbus
-else:
-  import dbus {.all.}
+import dbus
+
+when true:
+  import dbus/types {.all.}
   import std/importutils
   privateAccess Variant
-  privateAccess ArrayData
-  privateAccess DictEntryData
 
 const
   TEST_BUSNAME = "com.zielmicha.test"
