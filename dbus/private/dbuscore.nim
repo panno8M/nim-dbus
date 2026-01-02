@@ -11,7 +11,6 @@ import std/[sequtils, strutils, macros, importutils]
 
 privateAccess Variant
 
-include dbus/private/decoder
 include dbus/private/message
 include dbus/private/reply
 include dbus/private/wrapper

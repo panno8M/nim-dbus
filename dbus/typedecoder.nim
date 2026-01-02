@@ -1,3 +1,9 @@
+import dbus/types
+import dbus/signatures {.all.}
+import dbus/variants
+
+import std/[sequtils, macros]
+
 proc decodeSignature(sig: Signature): NimNode =
   case sig.code
   of scBool:

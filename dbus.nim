@@ -6,7 +6,8 @@ import dbus/bus
 import dbus/types
 import dbus/signatures
 import dbus/typeencoder
+import dbus/typedecoder
 import dbus/variants
 import dbus/private/dbuscore
 
-export errors, bus, types, signatures, typeencoder, variants, dbuscore
+export errors, bus, types, signatures, typeencoder, typedecoder, variants, dbuscore
