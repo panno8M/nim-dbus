@@ -17,24 +17,24 @@ proc testEcho[T](val: T): Variant =
   ## Test helper proc that sends a value to the test echo Dbus
   ## service and returns the echoed value.  Useful for testing
   ## that values can be sent and retrieved through the bus
-  let bus = getBus(dbus.DBUS_BUS_SESSION)
-  var msg = newMethodCallMessage(TEST_BUSNAME,
+  let bus: Bus = getBus(dbus.DBUS_BUS_SESSION)
+  var msg: Message = newMethodCallMessage(TEST_BUSNAME,
               TEST_OBJECTPATH,
               TEST_INTERFACE,
               TEST_METHOD)
 
   msg.append(val)
 
-  let pending = bus.sendWithReply(msg)
-  let reply = pending.waitForReply()
+  let pending: PendingCall = bus.sendWithReply(msg)
+  let reply: Message = pending.waitForReply()
   reply.raiseIfError()
 
   check reply[0][string] == "Hello, world!"
   return reply[1][Variant]
 
 test "basic":
-  let bus = getBus(dbus.DBUS_BUS_SESSION)
-  var msg = newMethodCallMessage(TEST_BUSNAME,
+  let bus: Bus = getBus(dbus.DBUS_BUS_SESSION)
+  var msg: Message = newMethodCallMessage(TEST_BUSNAME,
               TEST_OBJECTPATH,
               TEST_INTERFACE,
               TEST_METHOD)
@@ -57,7 +57,9 @@ test "basic":
 
 template simpleTest(sig: Signature; value) =
   let val = value
-  let res = testEcho(val)
+  let res: Variant = testEcho(val)
+  check val is decode(sig)
+  check encode(typeof(val)) == sig
   check signatureOf(res) == sig
   check res[sig] == val
 
