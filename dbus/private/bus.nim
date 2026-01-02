@@ -2,8 +2,6 @@ import dbus/lowlevel
 import dbus/errors
 export lowlevel
 
-converter toBool(x: dbus_bool_t): bool = x != 0
-
 type DbusRemoteException* = object of DbusException
 
 type Bus* = ref object
@@ -18,8 +16,7 @@ proc destroyConnection(bus: Bus) =
   dbus_connection_close(bus.conn)
 
 proc getBus*(busType: DBusBusType): Bus =
-  let ok = dbus_threads_init_default() # enable threads
-  assert ok
+  doAssert dbus_threads_init_default() != 0 # enable threads
   new(result)
   DBusException.liftDbusError(err):
     result.conn = dbus_bus_get(busType, addr err)

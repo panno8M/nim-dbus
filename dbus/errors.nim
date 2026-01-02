@@ -15,7 +15,7 @@ template liftDbusError*(Exc: typedesc[DBusException]; err; body): untyped =
     except Exception:
       dbus_error_free(addr err)
       raise
-    if dbus_error_is_set(addr err):
+    if dbus_error_is_set(addr err) != 0:
       raise (ref Exc)(
         msg: $err.name & ": " & $err.message,
         err: move(err))

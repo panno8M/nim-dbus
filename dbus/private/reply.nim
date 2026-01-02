@@ -19,7 +19,7 @@ iterator iterate*(msg: Message): (int, ptr DbusMessageIter) =
   if dbus_message_iter_init(msg.raw, addr iter[]) == 0:
     raise newException(DbusException, "dbus_message_iter_init")
   yield (i, addr iter[])
-  while dbus_message_iter_next(addr iter[]):
+  while dbus_message_iter_next(addr iter[]) != 0:
     inc i
     yield (i, addr iter[])
 
@@ -28,7 +28,7 @@ iterator iterate*(iter: ptr DbusMessageIter): (int, ptr DbusMessageIter) =
   var i: int
   dbus_message_iter_recurse(iter, addr subiter[])
   yield (i, addr subiter[])
-  while dbus_message_iter_next(addr subiter[]):
+  while dbus_message_iter_next(addr subiter[]) != 0:
     inc i
     yield (i, addr subiter[])
 
