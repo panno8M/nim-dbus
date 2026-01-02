@@ -1,8 +1,5 @@
 import dbus/lowlevel
 import dbus/errors
-export lowlevel
-
-type DbusRemoteException* = object of DbusException
 
 type Bus* = ref object
   conn*: ptr DBusConnection

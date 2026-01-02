@@ -6,6 +6,8 @@ type DBusException* = object of CatchableError
 proc `=destroy`*(e: DBusException) =
   dbus_error_free(addr e.err)
 
+type DbusRemoteException* = object of DbusException
+
 template liftDbusError*(Exc: typedesc[DBusException]; err; body): untyped =
   block:
     var err {.inject.}: DBusError
