@@ -1,4 +1,5 @@
 import dbus/types {.all.}
+import dbus/typeencoder
 import std/importutils
 
 privateAccess Variant
@@ -90,55 +91,55 @@ proc signatureOf*(v: Variant): Signature =
 
 proc newVariant*(value: byte): Variant =
   Variant(
-    typ: encode(value),
+    typ: encode(byte),
     data: VariantData(byte: value)
   )
 
 proc newVariant*(value: bool): Variant =
   Variant(
-    typ: encode(value),
+    typ: encode(bool),
     data: VariantData(bool: value)
   )
 
 proc newVariant*(value: int16): Variant =
   Variant(
-    typ: encode(value),
+    typ: encode(int16),
     data: VariantData(int16: value)
   )
 
 proc newVariant*(value: uint16): Variant =
   Variant(
-    typ: encode(value),
+    typ: encode(uint16),
     data: VariantData(uint16: value)
   )
 
 proc newVariant*(value: int32): Variant =
   Variant(
-    typ: encode(value),
+    typ: encode(int32),
     data: VariantData(int32: value)
   )
 
 proc newVariant*(value: uint32): Variant =
   Variant(
-    typ: encode(value),
+    typ: encode(uint32),
     data: VariantData(uint32: value)
   )
 
 proc newVariant*(value: int64): Variant =
   Variant(
-    typ: encode(value),
+    typ: encode(int64),
     data: VariantData(int64: value)
   )
 
 proc newVariant*(value: uint64): Variant =
   Variant(
-    typ: encode(value),
+    typ: encode(uint64),
     data: VariantData(uint64: value)
   )
 
 proc newVariant*(value: float64): Variant =
   Variant(
-    typ: encode(value),
+    typ: encode(float64),
     data: VariantData(float64: value)
   )
 proc newVariant*(value: float32): Variant =
@@ -146,13 +147,13 @@ proc newVariant*(value: float32): Variant =
 
 proc newVariant*(value: FD): Variant =
   Variant(
-    typ: encode(value),
+    typ: encode(FD),
     data: VariantData(FD: value)
   )
 
 proc newVariant*(value: string): Variant =
   Variant(
-    typ: encode(value),
+    typ: encode(string),
     data: VariantData(string: value)
   )
 proc newVariant*(value: cstring): Variant =
@@ -160,13 +161,13 @@ proc newVariant*(value: cstring): Variant =
 
 proc newVariant*(value: ObjectPath): Variant =
   Variant(
-    typ: encode(value),
+    typ: encode(ObjectPath),
     data: VariantData(ObjectPath: value)
   )
 
 proc newVariant*(value: Signature): Variant =
   Variant(
-    typ: encode(value),
+    typ: encode(Signature),
     data: VariantData(Signature: value)
   )
 
