@@ -21,6 +21,29 @@ proc `=copy`*(a: var MessageObj; b: MessageObj) =
   wasMoved a
   a.raw = dbus_message_ref(b.raw)
 
+proc type*(msg: ptr DBusMessage): MessageType =
+  if msg.isNil:
+    mtInvalid
+  else:
+    MessageType(dbus_message_get_type(msg))
+proc type*(msg: Message): MessageType =
+  msg.raw.type
+
+proc newMessage*(msg: ptr DBusMessage): Message =
+  if msg.isNil:
+    raise newException(DbusException, "the message is nil")
+  case msg.type
+  of mtMethodCall:
+    MethodCallMessage(raw: msg)
+  of mtMethodReturn:
+    MethodReturnMessage(raw: msg)
+  of mtError:
+    ErrorMessage(raw: msg)
+  of mtSignal:
+    SignalMessage(raw: msg)
+  of mtInvalid:
+    raise newException(DbusException, "the message is invalid")
+
 proc newSignalMessage*(path: string, iface: string, name: string): SignalMessage =
   SignalMessage(raw: dbus_message_new_signal(path, iface, name))
 
@@ -32,14 +55,6 @@ proc newMethodReturnMessage*(methodCall: MethodCallMessage): MethodReturnMessage
 
 proc newErrorMessage*(methodCall: MethodCallMessage; name: string; message: string): ErrorMessage =
   ErrorMessage(raw: dbus_message_new_error(methodCall.raw, cstring(name), cstring(message)))
-
-proc type*(msg: ptr DBusMessage): MessageType =
-  if msg.isNil:
-    mtInvalid
-  else:
-    MessageType(dbus_message_get_type(msg))
-proc type*(msg: Message): MessageType =
-  msg.raw.type
 
 proc name*(msg: ErrorMessage): string =
   $dbus_message_get_error_name(msg.raw)

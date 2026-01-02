@@ -47,21 +47,8 @@ proc unpackValueSeq*(incoming: Message): seq[Variant] =
   for i, iter in incoming.iterate:
     result.add iter.decode(Variant)
 
-# VTABLE
-
-const
-  DBUS_MESSAGE_TYPE_METHOD_CALL = 1
-  DBUS_MESSAGE_TYPE_SIGNAL = 4
-
 proc messageFunc(connection: ptr DBusConnection, message: ptr DBusMessage, user_data: pointer): DBusHandlerResult {.cdecl.} =
-  let rawType = dbus_message_get_type(message)
-  var msg: Message
-  if rawType == DBUS_MESSAGE_TYPE_METHOD_CALL:
-    msg = MethodCallMessage(raw: message)
-  elif rawType == DBUS_MESSAGE_TYPE_SIGNAL:
-    msg = SignalMessage(raw: message)
-  else:
-    raise newException(DbusException, "unknown message(" & $rawType & ")")
+  let msg = newMessage(message)
 
   let packed = cast[PackedMessageCallback](userData)
   let ok = packed.callback(packed.bus, msg)

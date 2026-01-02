@@ -9,17 +9,7 @@ proc waitForReply*(call: PendingCall): Message =
   call.bus.flush()
   dbus_pending_callblock(call.call)
   var msg = dbus_pending_call_steal_reply(call.call)
-  result = case msg.type
-  of mtMethodCall:
-    MethodCallMessage(raw: msg)
-  of mtMethodReturn:
-    MethodReturnMessage(raw: msg)
-  of mtError:
-    ErrorMessage(raw: msg)
-  of mtSignal:
-    SignalMessage(raw: msg)
-  of mtInvalid:
-    raise newException(DbusException, "dbus_pending_call_steal_reply")
+  result = newMessage(msg)
 
   defer: dbus_pending_call_unref(call.call)
 
