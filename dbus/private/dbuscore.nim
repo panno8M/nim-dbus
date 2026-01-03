@@ -7,8 +7,9 @@ import dbus/types {.all.}
 import dbus/signatures {.all.}
 import dbus/variants
 import dbus/messages
+import dbus/deserializer
 
-import std/[sequtils, strutils, macros, importutils]
+import std/[sequtils, strutils, importutils]
 
 privateAccess Variant
 
