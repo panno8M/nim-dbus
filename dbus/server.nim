@@ -1,4 +1,5 @@
-# RAW
+import dbus/lowlevel
+import dbus/middlelevel
 
 proc registerObject(connection: Connection, path: ObjectPath,
                     messageFunc: DBusObjectPathMessageFunction,
@@ -19,10 +20,6 @@ type
   PackedMessageCallback = ref object
     connection: Connection
     callback: MessageCallback
-
-proc unpackValueSeq*(incoming: Message): seq[Variant] =
-  for i, iter in incoming.iterate:
-    result.add iter[Variant]
 
 proc messageFunc(connection: ptr DBusConnection, message: ptr DBusMessage, user_data: pointer): DBusHandlerResult {.cdecl.} =
   let msg = newMessage(message)

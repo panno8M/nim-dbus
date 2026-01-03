@@ -13,6 +13,7 @@ import dbus/variants
 import dbus/messages
 import dbus/serializer
 import dbus/deserializer
-import dbus/private/dbuscore
+import dbus/wrapper
+import dbus/server
 
-export errors, bus, signatures, typeencoder, typedecoder, variants, messages, serializer, deserializer, dbuscore
+export errors, bus, signatures, typeencoder, typedecoder, variants, messages, serializer, deserializer, wrapper, server
