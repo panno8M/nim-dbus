@@ -46,7 +46,7 @@ proc newMainLoop*(conn: Connection): MainLoop =
   conn.addMatch("type='signal'")
   conn.addMatch("type='method_call'")
 
-proc tick*(self: MainLoop) =
+proc tick*(self: MainLoop; timeout: int = -1) =
   var
     fds: array[maxWatches, TPollfd]
     activeWatches: seq[ptr DbusWatch] = @[]
@@ -74,8 +74,8 @@ proc tick*(self: MainLoop) =
     activeWatches.add watch
     nfds += 1
 
-  if poll(cast[ptr TPollfd](addr fds), Tnfds(nfds), -1) <= 0:
-    raiseOSError(osLastError())
+  if poll(cast[ptr TPollfd](addr fds), Tnfds(nfds), cint(timeout)) <= 0:
+    return
 
   for i in 0..<nfds:
     let events = fds[i].revents
