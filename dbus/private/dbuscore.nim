@@ -6,12 +6,12 @@ import dbus/bus
 import dbus/types {.all.}
 import dbus/signatures {.all.}
 import dbus/variants
+import dbus/messages
 
 import std/[sequtils, strutils, macros, importutils]
 
 privateAccess Variant
 
-include dbus/private/message
 include dbus/private/reply
 include dbus/private/wrapper
 include dbus/private/server

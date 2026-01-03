@@ -4,7 +4,7 @@ import dbus/errors
 import dbus/types {.all.}
 import dbus/signatures
 import dbus/variants
-import dbus/private/dbuscore
+import dbus/messages
 
 import std/[importutils]
 privateAccess Variant

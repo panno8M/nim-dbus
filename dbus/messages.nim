@@ -1,3 +1,8 @@
+import dbus/lowlevel
+
+import dbus/errors
+import dbus/bus
+import dbus/types
 
 type
   MessageObj* = object of RootObj
@@ -64,8 +69,8 @@ proc send*(conn: Bus, msg: Message): dbus_uint32_t {.discardable.} =
       raise newException(DbusException, "dbus_connection_send")
 
 type PendingCall* = object
-  call: ptr DBusPendingCall
-  bus: Bus
+  call*: ptr DBusPendingCall
+  bus*: Bus
 
 proc sendWithReply*(bus: Bus, msg: Message): PendingCall =
   result.bus = bus
