@@ -1,15 +1,15 @@
-import dbus, dbus/lowlevel, posix, os
+import dbus, posix, os
 
 const maxWatches = 128
 
 type
-  MainLoop* = object
-    conn: ptr DbusConnection
+  MainLoop* = ref object
+    conn: Connection
     watchesCount: int
     watches: array[maxWatches, ptr DbusWatch]
 
 proc addWatch(newWatch: ptr DBusWatch, loopPtr: pointer): dbus_bool_t {.cdecl.} =
-  let loop = cast[ptr MainLoop](loopPtr)
+  let loop = cast[MainLoop](loopPtr)
   #echo "addWatch ", dbus_watch_get_fd(watch)
   if loop.watchesCount == maxWatches:
     raise newException(ValueError, "too many watches")
@@ -21,7 +21,7 @@ proc addWatch(newWatch: ptr DBusWatch, loopPtr: pointer): dbus_bool_t {.cdecl.} 
   return 1
 
 proc removeWatch(oldWatch: ptr DBusWatch, loopPtr: pointer) {.cdecl.} =
-  let loop = cast[ptr MainLoop](loopPtr)
+  let loop = cast[MainLoop](loopPtr)
   #echo "removeWatch"
   for watch in loop.watches.mitems:
     if watch == oldWatch:
@@ -35,21 +35,18 @@ proc toggleWatch(watch: ptr DBusWatch, loopPtr: pointer) {.cdecl.} =
 proc freeLoop(loopPtr: pointer) {.cdecl.} =
   discard
 
-proc create*(cls: typedesc[MainLoop], bus: Bus): ptr MainLoop =
-  ## This creates a new main loop, the returned pointer must be manually free'd
-  result = create(MainLoop)
-  result.conn = bus.conn
-  let ok = dbus_connection_set_watch_functions(result.conn,
-                                               add_function=DBusAddWatchFunction(addWatch),
-                                               remove_function=DBusRemoveWatchFunction(removeWatch),
-                                               toggled_function=DBusWatchToggledFunction(toggleWatch),
-                                               data=result.pointer,
-                                               free_data_function=freeLoop)
-  assert ok != 0
-  dbus_bus_add_match(result.conn, "type='signal'", nil)
-  dbus_bus_add_match(result.conn, "type='method_call'", nil)
+proc newMainLoop*(conn: Connection): MainLoop =
+  result = MainLoop(conn: conn)
+  assert conn.setWatchFunctions(
+    add_function=DBusAddWatchFunction(addWatch),
+    remove_function=DBusRemoveWatchFunction(removeWatch),
+    toggled_function=DBusWatchToggledFunction(toggleWatch),
+    data=addr result[],
+    free_data_function=freeLoop)
+  conn.addMatch("type='signal'")
+  conn.addMatch("type='method_call'")
 
-proc tick*(self: ptr MainLoop) =
+proc tick*(self: MainLoop) =
   var
     fds: array[maxWatches, TPollfd]
     activeWatches: seq[ptr DbusWatch] = @[]
@@ -98,11 +95,9 @@ proc tick*(self: ptr MainLoop) =
     let ok = dbus_watch_handle(watch, flags)
     assert ok != 0
 
-    discard dbus_connection_ref(self.conn)
-    while dbus_connection_dispatch(self.conn) == DBUS_DISPATCH_DATA_REMAINS:
+    while self.conn.dispatch == DBUS_DISPATCH_DATA_REMAINS:
       discard
-    dbus_connection_unref(self.conn)
 
-proc runForever*(self: ptr MainLoop) =
+proc runForever*(self: MainLoop) =
   while true:
     self.tick()

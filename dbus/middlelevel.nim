@@ -65,6 +65,7 @@ type
 
 
 proc `=destroy`*(conn: ConnectionObj) =
+  if conn.raw.isNil: return
   dbus_connection_unref(conn.raw)
 proc `=copy`*(dst: var ConnectionObj; src: ConnectionObj) =
   `=destroy` dst
@@ -109,6 +110,10 @@ proc getBus*(busType: DBusBusType): Connection =
   DBusException.liftDbusError(err):
     result = Connection(raw: dbus_bus_get(busType, addr err))
 
+proc addMatch*(connection: Connection, rule: string) =
+  DBusException.liftDbusError(err):
+    dbus_bus_add_match(connection.raw, cstring(rule), addr err)
+
 proc send*(conn: Connection, msg: Message): bool {.discardable.} =
   var b: dbus_bool_t
   if dbus_connection_send(conn.raw, msg.raw, addr b) == 0:
@@ -135,6 +140,24 @@ proc tryRegisterObjectPath*(connection: Connection;
       user_data,
       addr err)
 
+proc dispatch*(connection: Connection): DBusDispatchStatus =
+  dbus_connection_dispatch(connection.raw)
+
+proc setWatchFunctions*(connection: Connection;
+  addFunction: DBusAddWatchFunction;
+  removeFunction: DBusRemoveWatchFunction;
+  toggledFunction: DBusWatchToggledFunction;
+  data: pointer;
+  freeDataFunction: DBusFreeFunction;
+): bool =
+  dbus_connection_set_watch_functions(connection.raw,
+    addFunction,
+    removeFunction,
+    toggledFunction,
+    data,
+    freeDataFunction,
+  ) != 0
+
 # Message
 proc type(msg: ptr DBusMessage): MessageType =
   if msg.isNil:
@@ -149,13 +172,13 @@ proc newMessage*(msg: ptr DBusMessage): Message =
     raise newException(DbusException, "the message is nil")
   case msg.type
   of mtMethodCall:
-    MethodCallMessage(raw: msg)
+    MethodCallMessage(raw: dbus_message_ref(msg))
   of mtMethodReturn:
-    MethodReturnMessage(raw: msg)
+    MethodReturnMessage(raw: dbus_message_ref(msg))
   of mtError:
-    ErrorMessage(raw: msg)
+    ErrorMessage(raw: dbus_message_ref(msg))
   of mtSignal:
-    SignalMessage(raw: msg)
+    SignalMessage(raw: dbus_message_ref(msg))
   of mtInvalid:
     raise newException(DbusException, "the message is invalid")
 
