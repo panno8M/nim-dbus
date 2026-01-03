@@ -10,7 +10,7 @@ proc helloAsync*(dbusIface: ComZielmichaTestRemote, num: uint32, sss: string): P
   let msg = newMethodCallMessage(dbusIface.uniqueBus.uniqueName, dbusIface.path, "com.zielmicha.test", "hello")
   msg.append(num)
   msg.append(sss)
-  return dbusIface.uniqueBus.bus.sendWithReply(msg)
+  return dbusIface.uniqueBus.connection.sendWithReply(msg)
 
 proc helloGetReply*(reply: Message): tuple[salutation: string, retnum: uint32] =
   reply.raiseIfError

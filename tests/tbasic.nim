@@ -3,7 +3,7 @@ import unittest
 import dbus
 
 when true:
-  import dbus/types {.all.}
+  import dbus/middlelevel {.all.}
   import std/importutils
   privateAccess Variant
 
@@ -17,7 +17,7 @@ proc testEcho[T](val: T): Variant =
   ## Test helper proc that sends a value to the test echo Dbus
   ## service and returns the echoed value.  Useful for testing
   ## that values can be sent and retrieved through the bus
-  let bus: Bus = getBus(dbus.DBUS_BUS_SESSION)
+  let bus: Connection = getBus(dbus.DBUS_BUS_SESSION)
   var msg: Message = newMethodCallMessage(TEST_BUSNAME,
               TEST_OBJECTPATH,
               TEST_INTERFACE,
@@ -33,7 +33,7 @@ proc testEcho[T](val: T): Variant =
   return reply[1][Variant]
 
 test "basic":
-  let bus: Bus = getBus(dbus.DBUS_BUS_SESSION)
+  let bus: Connection = getBus(dbus.DBUS_BUS_SESSION)
   var msg: Message = newMethodCallMessage(TEST_BUSNAME,
               TEST_OBJECTPATH,
               TEST_INTERFACE,

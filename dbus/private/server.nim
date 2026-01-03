@@ -1,10 +1,6 @@
 # RAW
 
-proc requestName*(bus: Bus, name: string) =
-  DbusException.liftDbusError(err):
-    discard dbus_bus_request_name(bus.conn, name, 0, addr err)
-
-proc registerObject(bus: Bus, path: ObjectPath,
+proc registerObject(connection: Connection, path: ObjectPath,
                     messageFunc: DBusObjectPathMessageFunction,
                     unregisterFunc: DBusObjectPathUnregisterFunction,
                     userData: pointer) =
@@ -13,23 +9,16 @@ proc registerObject(bus: Bus, path: ObjectPath,
   vtable.message_function = messageFunc
   vtable.unregister_function = unregisterFunc
 
-  DbusException.liftDbusError(err):
-    discard dbus_connection_try_register_object_path(bus.conn, path.string.cstring, addr vtable, userData, addr err)
+  connection.tryRegisterObjectPath(path, addr vtable, userData)
 
 # TYPES
 
 type
-  MessageCallback* = proc(bus: Bus; incoming: Message): bool
+  MessageCallback* = proc(connection: Connection; incoming: Message): bool
 
   PackedMessageCallback = ref object
-    bus: Bus
+    connection: Connection
     callback: MessageCallback
-
-proc name*(incoming: Message): string =
-  $dbus_message_get_member(incoming.raw)
-
-proc interfaceName*(incoming: Message): string =
-  $dbus_message_get_interface(incoming.raw)
 
 proc unpackValueSeq*(incoming: Message): seq[Variant] =
   for i, iter in incoming.iterate:
@@ -39,7 +28,7 @@ proc messageFunc(connection: ptr DBusConnection, message: ptr DBusMessage, user_
   let msg = newMessage(message)
 
   let packed = cast[PackedMessageCallback](userData)
-  let ok = packed.callback(packed.bus, msg)
+  let ok = packed.callback(packed.connection, msg)
   if ok:
     return DBUS_HANDLER_RESULT_HANDLED
   else:
@@ -48,11 +37,11 @@ proc messageFunc(connection: ptr DBusConnection, message: ptr DBusMessage, user_
 proc unregisterFunc(connection: ptr DBusConnection, userData: pointer) {.cdecl.} =
   GC_unref cast[PackedMessageCallback](userData)
 
-proc registerObject*(bus: Bus, path: ObjectPath, callback: MessageCallback) =
+proc registerObject*(connection: Connection, path: ObjectPath, callback: MessageCallback) =
   var packed: PackedMessageCallback
   new(packed)
-  packed.bus = bus
+  packed.connection = connection
   packed.callback = callback
   GC_ref packed
 
-  registerObject(bus, path, messageFunc.DBusObjectPathMessageFunction, unregisterFunc, cast[pointer](packed))
+  registerObject(connection, path, messageFunc.DBusObjectPathMessageFunction, unregisterFunc, cast[pointer](packed))

@@ -1,7 +1,36 @@
 import dbus/errors
-import dbus/types
 
-proc serialize*(kind: SigCode): char =
+type
+  # TODO: validate Signature runes
+  Signature* = distinct string
+
+type SigCode* = enum
+  scNull
+  scByte
+  scBool
+  scInt16
+  scUint16
+  scInt32
+  scUint32
+  scInt64
+  scUint64
+  scDouble
+  scUnixFd
+
+  scString
+  scObjectPath
+  scSignature
+
+  scArray
+  scStruct
+  scVariant
+  scDictEntry
+
+const dbusFixedTypes* = {scByte..scUnixFd}
+const dbusStringTypes* = {scString..scSignature}
+const dbusContainerTypes* = {scArray..scDictEntry}
+
+proc getChar*(kind: SigCode): char =
   case kind
   of scNull:
     raise newException(DbusException, "cannot serialize null type")
@@ -25,6 +54,9 @@ proc serialize*(kind: SigCode): char =
   of scStruct: 'r'
   of scVariant: 'v'
   of scDictEntry: 'e'
+
+proc getSignature*(ch: SigCode): Signature =
+  Signature($ch.getChar)
 
 proc code*(c: char): SigCode =
   case c

@@ -1,109 +1,98 @@
 import dbus/lowlevel
-export lowlevel
-
+import dbus/middlelevel {.all.}
 import dbus/errors
-import dbus/types {.all.}
 import dbus/signatures
 import dbus/variants
-import dbus/messages
 
 import std/[sequtils, strutils, macros]
 
-iterator iterate*(msg: Message): (int, ref DbusMessageIter) =
-  var iter = new DbusMessageIter
+iterator iterate*(msg: Message): (int, MessageIter) =
+  let iter = newMessageIter(msg)
   var i: int
-  if dbus_message_iter_init(msg.raw, addr iter[]) == 0:
-    raise newException(DbusException, "dbus_message_iter_init")
   yield (i, iter)
-  while dbus_message_iter_next(addr iter[]) != 0:
+  while iter.next:
     inc i
     yield (i, iter)
 
-iterator iterate*(iter: ref DbusMessageIter): (int, ref DbusMessageIter) =
-  var subiter = new DbusMessageIter
+iterator iterate*(iter: MessageIter): (int, MessageIter) =
+  let subiter = iter.recurse
   var i: int
-  dbus_message_iter_recurse(addr iter[], addr subiter[])
   yield (i, subiter)
-  while dbus_message_iter_next(addr subiter[]) != 0:
+  while subiter.next:
     inc i
     yield (i, subiter)
 
-proc `[]`*(msg: Message; i: int): ref DbusMessageIter =
+proc `[]`*(msg: Message; i: int): MessageIter =
   for j, iter in msg.iterate:
     if i == j: return iter
 
-proc `[]`*(iter: ref DbusMessageIter; i: int): ref DbusMessageIter =
+proc `[]`*(iter: MessageIter; i: int): MessageIter =
   for j, subiter in iter.iterate:
     if i == j: return subiter
 
-proc sign(iter: ref DbusMessageIter): Signature =
-  let cs = dbus_message_iter_get_signature(addr iter[])
-  result = Signature($cs)
-  dbus_free(cs)
-
-proc `[]`*(iter: ref DbusMessageIter; _: typedesc[bool]): bool =
+proc `[]`*(iter: MessageIter; _: typedesc[bool]): bool =
   var b: dbus_bool_t
-  dbus_message_iter_get_basic(addr iter[], addr b)
+  iter.getBasic(addr b)
   bool(b)
 
-proc `[]`*(iter: ref DbusMessageIter; _: typedesc[byte]): byte =
-  dbus_message_iter_get_basic(addr iter[], addr result)
+proc `[]`*(iter: MessageIter; _: typedesc[byte]): byte =
+  iter.getBasic(addr result)
 
-proc `[]`*(iter: ref DbusMessageIter; _: typedesc[int16]): int16 =
-  dbus_message_iter_get_basic(addr iter[], addr result)
+proc `[]`*(iter: MessageIter; _: typedesc[int16]): int16 =
+  iter.getBasic(addr result)
 
-proc `[]`*(iter: ref DbusMessageIter; _: typedesc[uint16]): uint16 =
-  dbus_message_iter_get_basic(addr iter[], addr result)
+proc `[]`*(iter: MessageIter; _: typedesc[uint16]): uint16 =
+  iter.getBasic(addr result)
 
-proc `[]`*(iter: ref DbusMessageIter; _: typedesc[int32]): int32 =
-  dbus_message_iter_get_basic(addr iter[], addr result)
+proc `[]`*(iter: MessageIter; _: typedesc[int32]): int32 =
+  iter.getBasic(addr result)
 
-proc `[]`*(iter: ref DbusMessageIter; _: typedesc[uint32]): uint32 =
-  dbus_message_iter_get_basic(addr iter[], addr result)
+proc `[]`*(iter: MessageIter; _: typedesc[uint32]): uint32 =
+  iter.getBasic(addr result)
 
-proc `[]`*(iter: ref DbusMessageIter; _: typedesc[int64]): int64 =
-  dbus_message_iter_get_basic(addr iter[], addr result)
+proc `[]`*(iter: MessageIter; _: typedesc[int64]): int64 =
+  iter.getBasic(addr result)
 
-proc `[]`*(iter: ref DbusMessageIter; _: typedesc[uint64]): uint64 =
-  dbus_message_iter_get_basic(addr iter[], addr result)
+proc `[]`*(iter: MessageIter; _: typedesc[uint64]): uint64 =
+  iter.getBasic(addr result)
 
-proc `[]`*(iter: ref DbusMessageIter; _: typedesc[float64]): float64 =
-  dbus_message_iter_get_basic(addr iter[], addr result)
+proc `[]`*(iter: MessageIter; _: typedesc[float64]): float64 =
+  iter.getBasic(addr result)
 
-proc `[]`*(iter: ref DbusMessageIter; _: typedesc[FD]): FD =
-  dbus_message_iter_get_basic(addr iter[], addr result)
+proc `[]`*(iter: MessageIter; _: typedesc[FD]): FD =
+  iter.getBasic(addr result)
 
-proc `[]`*(iter: ref DbusMessageIter; _: typedesc[string]): string =
+proc `[]`*(iter: MessageIter; _: typedesc[string]): string =
   var s: cstring
-  dbus_message_iter_get_basic(addr iter[], addr s)
+  iter.getBasic(addr s)
   $s
 
-proc `[]`*(iter: ref DbusMessageIter; _: typedesc[ObjectPath]): ObjectPath =
+proc `[]`*(iter: MessageIter; _: typedesc[ObjectPath]): ObjectPath =
   ObjectPath(iter[string])
 
-proc `[]`*(iter: ref DbusMessageIter; _: typedesc[Signature]): Signature =
+proc `[]`*(iter: MessageIter; _: typedesc[Signature]): Signature =
   Signature(iter[string])
 
-proc `[]`*(iter: ref DbusMessageIter; _: typedesc[DictEntryData]): DictEntryData =
+proc `[]`*(iter: MessageIter; _: typedesc[DictEntryData]): DictEntryData =
   var items: seq[tuple[sig: Signature, item: Variant]]
   for i, subiter in iter.iterate:
-    items.add (subiter.sign, subiter[Variant])
+    items.add (subiter.getSignature, subiter[Variant])
   DictEntryData(
     typ: (items[0].sig, items[1].sig),
     value: (items[0].item, items[1].item),
   )
 
-proc `[]`*(iter: ref DbusMessageIter; _: typedesc[ArrayData]): ArrayData =
+proc `[]`*(iter: MessageIter; _: typedesc[ArrayData]): ArrayData =
   var items: seq[Variant]
   for i, subiter in iter.iterate:
     items.add subiter[Variant]
   ArrayData(
-    typ: Signature(string(iter.sign)[1..^1]),
+    typ: Signature(string(iter.getSignature)[1..^1]),
     values: items,
   )
 
-proc `[]`*(iter: ref DbusMessageIter; _: typedesc[Variant]): Variant =
-  let kind = dbus_message_iter_get_arg_type(addr iter[]).char.code
+proc `[]`*(iter: MessageIter; _: typedesc[Variant]): Variant =
+  let kind = iter.getSignature.code
   case kind:
   of scNull:
     raise newException(DbusException, "cannot unpack null value")

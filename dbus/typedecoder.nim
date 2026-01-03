@@ -1,4 +1,4 @@
-import dbus/types
+import dbus/middlelevel
 import dbus/signatures {.all.}
 import dbus/variants
 

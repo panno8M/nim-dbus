@@ -1,11 +1,10 @@
-import dbus/types {.all.}
+import dbus/middlelevel {.all.}
 import dbus/signatures {.all.}
 import dbus/typeencoder
-import std/importutils
+
+import std/[sequtils, macros, importutils]
 
 privateAccess Variant
-
-import std/[sequtils, macros]
 
 func `==`*(a, b: Variant): bool =
   if a.typ == b.typ:

@@ -8,6 +8,16 @@ proc `=destroy`*(e: DBusException) =
 
 type DbusRemoteException* = object of DbusException
 
+proc toException*[T: DBusException](err: sink DbusError; Exc: typedesc[T]): ref[T] =
+  if dbus_error_is_set(addr err) != 0:
+    return (ref Exc)(
+      msg: $err.name & ": " & $err.message,
+      err: move(err))
+
+proc tryRaise*(exc: ref Exception) =
+  if exc != nil:
+    raise exc
+
 template liftDbusError*(Exc: typedesc[DBusException]; err; body): untyped =
   block:
     var err {.inject.}: DBusError
@@ -17,8 +27,4 @@ template liftDbusError*(Exc: typedesc[DBusException]; err; body): untyped =
     except Exception:
       dbus_error_free(addr err)
       raise
-    if dbus_error_is_set(addr err) != 0:
-      raise (ref Exc)(
-        msg: $err.name & ": " & $err.message,
-        err: move(err))
-
+    tryRaise err.toException(Exc)

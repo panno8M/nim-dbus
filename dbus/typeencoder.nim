@@ -1,4 +1,4 @@
-import dbus/types
+import dbus/middlelevel
 import dbus/signatures
 
 import std/strutils, sequtils
@@ -23,9 +23,6 @@ proc encode*[I; T](native: typedesc[array[I, T]]): Signature
 proc encode*[K, V](native: typedesc[(K, V)]): Signature
 proc encode*(native: typedesc[Variant]): Signature
 
-proc encode*(ch: SigCode): Signature =
-  Signature($ch.serialize)
-
 proc encodeArray*(itemType: Signature): Signature =
   Signature("a" & string(itemType))
 
@@ -37,49 +34,49 @@ proc encodeStruct*(itemTypes: seq[Signature]): Signature =
   Signature("(" & itemTypes.mapIt(string(it)).join("") & ")")
 
 proc encode*(native: typedesc[byte]): Signature =
-  encode(scByte)
+  scByte.getSignature
 
 proc encode*(native: typedesc[bool]): Signature =
-  encode(scBool)
+  scBool.getSignature
 
 proc encode*(native: typedesc[int16]): Signature =
-  encode(scInt16)
+  scInt16.getSignature
 
 proc encode*(native: typedesc[uint16]): Signature =
-  encode(scUint16)
+  scUint16.getSignature
 
 proc encode*(native: typedesc[int32]): Signature =
-  encode(scInt32)
+  scInt32.getSignature
 
 proc encode*(native: typedesc[uint32]): Signature =
-  encode(scUint32)
+  scUint32.getSignature
 
 proc encode*(native: typedesc[int64]): Signature =
-  encode(scInt64)
+  scInt64.getSignature
 
 proc encode*(native: typedesc[uint64]): Signature =
-  encode(scUint64)
+  scUint64.getSignature
 
 proc encode*(native: typedesc[float64]): Signature =
-  encode(scDouble)
+  scDouble.getSignature
 
 proc encode*(native: typedesc[float32]): Signature =
-  encode(scDouble)
+  scDouble.getSignature
 
 proc encode*(native: typedesc[FD]): Signature =
-  encode(scUnixFd)
+  scUnixFd.getSignature
 
 proc encode*(native: typedesc[cstring]): Signature =
-  encode(scString)
+  scString.getSignature
 
 proc encode*(native: typedesc[string]): Signature =
-  encode(scString)
+  scString.getSignature
 
 proc encode*(native: typedesc[ObjectPath]): Signature =
-  encode(scObjectPath)
+  scObjectPath.getSignature
 
 proc encode*(native: typedesc[Signature]): Signature =
-  encode(scSignature)
+  scSignature.getSignature
 
 proc encode*[T](native: typedesc[seq[T]]): Signature =
   encodeArray(encode(T))
@@ -90,4 +87,4 @@ proc encode*[K, V](native: typedesc[(K, V)]): Signature =
   encodeDictEntry(encode(K), encode(V))
 
 proc encode*(native: typedesc[Variant]): Signature =
-  encode(scVariant)
+  scVariant.getSignature
