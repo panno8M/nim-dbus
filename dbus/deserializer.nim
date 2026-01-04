@@ -82,13 +82,17 @@ proc `[]`*(iter: MessageIter; _: typedesc[DictEntryData]): DictEntryData =
     value: (items[0].item, items[1].item),
   )
 
-proc `[]`*(iter: MessageIter; _: typedesc[ArrayData]): ArrayData =
-  var items: seq[Variant]
+proc `[]`*[T](iter: MessageIter; _: typedesc[seq[T]]): seq[T] =
+  let count = iter.elementCount
+  if count == 0: return
+  result = newSeqOfCap[T](count)
   for i, subiter in iter.iterate:
-    items.add subiter[Variant]
+    result.add subiter[T]
+
+proc `[]`*(iter: MessageIter; _: typedesc[ArrayData]): ArrayData =
   ArrayData(
     typ: Signature(string(iter.getSignature)[1..^1]),
-    values: items,
+    values: iter[seq[Variant]],
   )
 
 proc `[]`*(iter: MessageIter; _: typedesc[Variant]): Variant =

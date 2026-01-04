@@ -252,7 +252,7 @@ proc `[]`*(value: Variant; native: typedesc[seq[Variant]]): seq[Variant] =
   value.data.array.values
 
 proc `[]`*[T](value: Variant, native: typedesc[seq[T]]): seq[T] =
-  value.data.array.values.mapIt(it.`[]`(T))
+  value.data.array.values.mapIt(it[T])
 
 proc `[]`*(value: Variant, native: typedesc[(Variant, Variant)]): tuple[key: Variant, value: Variant] =
   value.data.dictEntry

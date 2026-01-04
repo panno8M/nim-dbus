@@ -1247,6 +1247,8 @@ proc dbus_message_iter_get_arg_type*(iter: ptr DBusMessageIter): cint {.cdecl,
     importc: "dbus_message_iter_get_arg_type", dynlib: libdbus.}
 proc dbus_message_iter_get_element_type*(iter: ptr DBusMessageIter): cint {.
     cdecl, importc: "dbus_message_iter_get_element_type", dynlib: libdbus.}
+proc dbus_message_iter_get_element_count*(iter: ptr DBusMessageIter): cint {.
+    cdecl, importc: "dbus_message_iter_get_element_count", dynlib: libdbus.}
 proc dbus_message_iter_recurse*(iter: ptr DBusMessageIter; 
                                 sub: ptr DBusMessageIter) {.cdecl, 
     importc: "dbus_message_iter_recurse", dynlib: libdbus.}

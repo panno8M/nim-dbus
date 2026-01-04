@@ -218,6 +218,9 @@ proc newMessageIterAppend*(message: Message): MessageIter =
 proc next*(iter: MessageIter): bool =
   dbus_message_iter_next(addr iter.raw) != 0
 
+proc elementCount*(iter: MessageIter): int =
+  dbus_message_iter_get_element_count(addr iter.raw)
+
 proc recurse*(iter: MessageIter): MessageIter =
   new result
   dbus_message_iter_recurse(addr iter.raw, addr result.raw)
