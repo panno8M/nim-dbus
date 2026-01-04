@@ -4,7 +4,7 @@ import dbus/errors
 import dbus/signatures
 import dbus/variants
 
-import std/[sequtils, strutils, macros]
+import std/[sequtils, strutils, macros, importutils]
 
 iterator iterate*(msg: Message): (int, MessageIter) =
   let iter = newMessageIter(msg)
@@ -92,6 +92,7 @@ proc `[]`*(iter: MessageIter; _: typedesc[ArrayData]): ArrayData =
   )
 
 proc `[]`*(iter: MessageIter; _: typedesc[Variant]): Variant =
+  privateAccess Variant
   let kind = iter.getSignature.code
   case kind:
   of scNull:
@@ -135,7 +136,4 @@ proc `[]`*(iter: MessageIter; _: typedesc[Variant]): Variant =
       data: VariantData(struct: items)
     )
   of scVariant:
-    var item: Variant
-    for i, subiter in iter.iterate:
-      item = subiter[Variant]
-    return item
+    return iter.recurse[Variant]
