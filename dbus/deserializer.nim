@@ -172,3 +172,7 @@ proc deserialize*[T: MethodArgs](msg: Message; Args: typedesc[T]): T =
     field = iter[typeof(field)]
     if not next iter:
       return
+
+proc deserialize*[T: MethodArgs](msg: Message; Args: typedesc[ref T]): ref T =
+  new result
+  result[] = msg.deserialize(T)

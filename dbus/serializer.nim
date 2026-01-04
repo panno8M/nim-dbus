@@ -126,3 +126,7 @@ proc serialize*[T: MethodArgs](msg: Message; args: T) =
   var iter = newMessageIterAppend(msg)
   for field in args.fields:
     iter.append(field)
+
+proc serialize*[T: MethodArgs](msg: Message; args: ref T) =
+  if args != nil:
+    msg.serialize(args[])
