@@ -73,6 +73,12 @@ proc `[]`*(iter: MessageIter; _: typedesc[ObjectPath]): ObjectPath =
 proc `[]`*(iter: MessageIter; _: typedesc[Signature]): Signature =
   Signature(iter[string])
 
+proc `[]`*[A, B](iter: MessageIter; _: typedesc[(A, B)]): (A, B) =
+  var subiter = iter.recurse
+  result[0] = subiter[A]
+  if not next subiter: return
+  result[1] = subiter[B]
+
 proc `[]`*(iter: MessageIter; _: typedesc[DictEntryData]): DictEntryData =
   var items: seq[tuple[sig: Signature, item: Variant]]
   for i, subiter in iter.iterate:
