@@ -121,3 +121,8 @@ proc appendElement(iter: MessageIter; sign: Signature; x: Variant) =
 
 proc append*[T](msg: Message, x: T) =
   newMessageIterAppend(msg).append(x)
+
+proc serialize*[T: MethodArgs](msg: Message; args: T) =
+  var iter = newMessageIterAppend(msg)
+  for field in args.fields:
+    iter.append(field)

@@ -63,6 +63,8 @@ type
     mtInvalid = 0, mtMethodCall = 1, mtMethodReturn = 2,
     mtError = 3, mtSignal = 4
 
+type
+  MethodArgs* = object of RootObj
 
 proc `=destroy`*(conn: ConnectionObj) =
   if conn.raw.isNil: return

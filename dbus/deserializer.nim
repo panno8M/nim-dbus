@@ -22,6 +22,24 @@ iterator iterate*(iter: MessageIter): (int, MessageIter) =
     inc i
     yield (i, subiter)
 
+proc `[]`*(iter: MessageIter; _: typedesc[bool]): bool
+proc `[]`*(iter: MessageIter; _: typedesc[byte]): byte
+proc `[]`*(iter: MessageIter; _: typedesc[int16]): int16
+proc `[]`*(iter: MessageIter; _: typedesc[uint16]): uint16
+proc `[]`*(iter: MessageIter; _: typedesc[int32]): int32
+proc `[]`*(iter: MessageIter; _: typedesc[uint32]): uint32
+proc `[]`*(iter: MessageIter; _: typedesc[int64]): int64
+proc `[]`*(iter: MessageIter; _: typedesc[uint64]): uint64
+proc `[]`*(iter: MessageIter; _: typedesc[float64]): float64
+proc `[]`*(iter: MessageIter; _: typedesc[FD]): FD
+proc `[]`*(iter: MessageIter; _: typedesc[string]): string
+proc `[]`*(iter: MessageIter; _: typedesc[ObjectPath]): ObjectPath
+proc `[]`*(iter: MessageIter; _: typedesc[Signature]): Signature
+proc `[]`*(iter: MessageIter; _: typedesc[DictEntryData]): DictEntryData
+proc `[]`*[T](iter: MessageIter; _: typedesc[seq[T]]): seq[T]
+proc `[]`*(iter: MessageIter; _: typedesc[ArrayData]): ArrayData
+proc `[]`*(iter: MessageIter; _: typedesc[Variant]): Variant
+
 proc `[]`*(msg: Message; i: int): MessageIter =
   for j, iter in msg.iterate:
     if i == j: return iter
@@ -147,3 +165,10 @@ proc `[]`*(iter: MessageIter; _: typedesc[Variant]): Variant =
     )
   of scVariant:
     return iter.recurse[Variant]
+
+proc deserialize*[T: MethodArgs](msg: Message; Args: typedesc[T]): T =
+  var iter = newMessageIter(msg)
+  for field in result.fields:
+    field = iter[typeof(field)]
+    if not next iter:
+      return
