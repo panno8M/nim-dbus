@@ -1,4 +1,4 @@
-import dynlib
+import dynlib, macros
 
 import
   dbus/private/findlib
@@ -180,236 +180,476 @@ type
     padding3*: proc () {.cdecl.} #*< Reserved for future expansion
     padding4*: proc () {.cdecl.} #*< Reserved for future expansion
 
-proc dbus_error_init*(error: ptr DBusError) {.cdecl, importc: "dbus_error_init", dynlib: libdbus.}
-proc dbus_error_free*(error: ptr DBusError) {.cdecl, importc: "dbus_error_free", dynlib: libdbus.}
-proc dbus_set_error*(error: ptr DBusError; name: cstring; message: cstring) {.varargs, cdecl, importc: "dbus_set_error", dynlib: libdbus.}
-proc dbus_set_error_const*(error: ptr DBusError; name: cstring; message: cstring) {.cdecl, importc: "dbus_set_error_const", dynlib: libdbus.}
-proc dbus_move_error*(src: ptr DBusError; dest: ptr DBusError) {.cdecl, importc: "dbus_move_error", dynlib: libdbus.}
-proc dbus_error_has_name*(error: ptr DBusError; name: cstring): dbus_bool_t {.  cdecl, importc: "dbus_error_has_name", dynlib: libdbus.}
-proc dbus_error_is_set*(error: ptr DBusError): dbus_bool_t {.cdecl, importc: "dbus_error_is_set", dynlib: libdbus.}
-proc dbus_parse_address*(address: cstring; entry: ptr ptr ptr DBusAddressEntry; array_len: ptr cint; error: ptr DBusError): dbus_bool_t {.cdecl, importc: "dbus_parse_address", dynlib: libdbus.}
-proc dbus_address_entry_get_value*(entry: ptr DBusAddressEntry; key: cstring): cstring {.cdecl, importc: "dbus_address_entry_get_value", dynlib: libdbus.}
-proc dbus_address_entry_get_method*(entry: ptr DBusAddressEntry): cstring {.cdecl, importc: "dbus_address_entry_get_method", dynlib: libdbus.}
-proc dbus_address_entries_free*(entries: ptr ptr DBusAddressEntry) {.cdecl, importc: "dbus_address_entries_free", dynlib: libdbus.}
-proc dbus_address_escape_value*(value: cstring): cstring {.cdecl, importc: "dbus_address_escape_value", dynlib: libdbus.}
-proc dbus_address_unescape_value*(value: cstring; error: ptr DBusError): cstring {.cdecl, importc: "dbus_address_unescape_value", dynlib: libdbus.}
-proc dbus_malloc*(bytes: csize_t): pointer {.cdecl, importc: "dbus_malloc", dynlib: libdbus.}
-proc dbus_malloc0*(bytes: csize_t): pointer {.cdecl, importc: "dbus_malloc0", dynlib: libdbus.}
-proc dbus_realloc*(memory: pointer; bytes: csize_t): pointer {.cdecl, importc: "dbus_realloc", dynlib: libdbus.}
-proc dbus_free*(memory: pointer) {.cdecl, importc: "dbus_free", dynlib: libdbus.}
-proc dbus_free_string_array*(str_array: cstringArray) {.cdecl, importc: "dbus_free_string_array", dynlib: libdbus.}
-proc dbus_shutdown*() {.cdecl, importc: "dbus_shutdown", dynlib: libdbus.}
-proc dbus_message_new*(message_type: cint): ptr DBusMessage {.cdecl, importc: "dbus_message_new", dynlib: libdbus.}
-proc dbus_message_new_method_call*(bus_name: cstring; path: cstring; iface: cstring; `method`: cstring): ptr DBusMessage {.cdecl, importc: "dbus_message_new_method_call", dynlib: libdbus.}
-proc dbus_message_new_method_return*(method_call: ptr DBusMessage): ptr DBusMessage {.cdecl, importc: "dbus_message_new_method_return", dynlib: libdbus.}
-proc dbus_message_new_signal*(path: cstring; iface: cstring; name: cstring): ptr DBusMessage {.cdecl, importc: "dbus_message_new_signal", dynlib: libdbus.}
-proc dbus_message_new_error*(reply_to: ptr DBusMessage; error_name: cstring; error_message: cstring): ptr DBusMessage {.cdecl, importc: "dbus_message_new_error", dynlib: libdbus.}
-proc dbus_message_new_error_printf*(reply_to: ptr DBusMessage; error_name: cstring; error_format: cstring): ptr DBusMessage {.varargs, cdecl, importc: "dbus_message_new_error_printf", dynlib: libdbus.}
-proc dbus_message_copy*(message: ptr DBusMessage): ptr DBusMessage {.cdecl, importc: "dbus_message_copy", dynlib: libdbus.}
-proc dbus_message_ref*(message: ptr DBusMessage): ptr DBusMessage {.cdecl, importc: "dbus_message_ref", dynlib: libdbus.}
-proc dbus_message_unref*(message: ptr DBusMessage) {.cdecl, importc: "dbus_message_unref", dynlib: libdbus.}
-proc dbus_message_get_type*(message: ptr DBusMessage): cint {.cdecl, importc: "dbus_message_get_type", dynlib: libdbus.}
-proc dbus_message_set_path*(message: ptr DBusMessage; object_path: cstring): dbus_bool_t {.cdecl, importc: "dbus_message_set_path", dynlib: libdbus.}
-proc dbus_message_get_path*(message: ptr DBusMessage): cstring {.cdecl, importc: "dbus_message_get_path", dynlib: libdbus.}
-proc dbus_message_has_path*(message: ptr DBusMessage; object_path: cstring): dbus_bool_t {.cdecl, importc: "dbus_message_has_path", dynlib: libdbus.}
-proc dbus_message_set_interface*(message: ptr DBusMessage; iface: cstring): dbus_bool_t {.cdecl, importc: "dbus_message_set_interface", dynlib: libdbus.}
-proc dbus_message_get_interface*(message: ptr DBusMessage): cstring {.cdecl, importc: "dbus_message_get_interface", dynlib: libdbus.}
-proc dbus_message_has_interface*(message: ptr DBusMessage; iface: cstring): dbus_bool_t {.cdecl, importc: "dbus_message_has_interface", dynlib: libdbus.}
-proc dbus_message_set_member*(message: ptr DBusMessage; member: cstring): dbus_bool_t {.cdecl, importc: "dbus_message_set_member", dynlib: libdbus.}
-proc dbus_message_get_member*(message: ptr DBusMessage): cstring {.cdecl, importc: "dbus_message_get_member", dynlib: libdbus.}
-proc dbus_message_has_member*(message: ptr DBusMessage; member: cstring): dbus_bool_t {.cdecl, importc: "dbus_message_has_member", dynlib: libdbus.}
-proc dbus_message_set_error_name*(message: ptr DBusMessage; name: cstring): dbus_bool_t {.cdecl, importc: "dbus_message_set_error_name", dynlib: libdbus.}
-proc dbus_message_get_error_name*(message: ptr DBusMessage): cstring {.cdecl, importc: "dbus_message_get_error_name", dynlib: libdbus.}
-proc dbus_message_set_destination*(message: ptr DBusMessage; destination: cstring): dbus_bool_t {.cdecl, importc: "dbus_message_set_destination", dynlib: libdbus.}
-proc dbus_message_get_destination*(message: ptr DBusMessage): cstring {.cdecl, importc: "dbus_message_get_destination", dynlib: libdbus.}
-proc dbus_message_set_sender*(message: ptr DBusMessage; sender: cstring): dbus_bool_t {.cdecl, importc: "dbus_message_set_sender", dynlib: libdbus.}
-proc dbus_message_get_sender*(message: ptr DBusMessage): cstring {.cdecl, importc: "dbus_message_get_sender", dynlib: libdbus.}
-proc dbus_message_get_signature*(message: ptr DBusMessage): cstring {.cdecl, importc: "dbus_message_get_signature", dynlib: libdbus.}
-proc dbus_message_set_no_reply*(message: ptr DBusMessage; no_reply: dbus_bool_t) {.cdecl, importc: "dbus_message_set_no_reply", dynlib: libdbus.}
-proc dbus_message_get_no_reply*(message: ptr DBusMessage): dbus_bool_t {.cdecl, importc: "dbus_message_get_no_reply", dynlib: libdbus.}
-proc dbus_message_is_method_call*(message: ptr DBusMessage; iface: cstring; `method`: cstring): dbus_bool_t {.cdecl, importc: "dbus_message_is_method_call", dynlib: libdbus.}
-proc dbus_message_is_signal*(message: ptr DBusMessage; iface: cstring; signal_name: cstring): dbus_bool_t {.cdecl, importc: "dbus_message_is_signal", dynlib: libdbus.}
-proc dbus_message_is_error*(message: ptr DBusMessage; error_name: cstring): dbus_bool_t {.cdecl, importc: "dbus_message_is_error", dynlib: libdbus.}
-proc dbus_message_has_destination*(message: ptr DBusMessage; bus_name: cstring): dbus_bool_t {.cdecl, importc: "dbus_message_has_destination", dynlib: libdbus.}
-proc dbus_message_has_sender*(message: ptr DBusMessage; unique_bus_name: cstring): dbus_bool_t {.cdecl, importc: "dbus_message_has_sender", dynlib: libdbus.}
-proc dbus_message_has_signature*(message: ptr DBusMessage; signature: cstring): dbus_bool_t {.cdecl, importc: "dbus_message_has_signature", dynlib: libdbus.}
-proc dbus_message_get_serial*(message: ptr DBusMessage): dbus_uint32_t {.cdecl, importc: "dbus_message_get_serial", dynlib: libdbus.}
-proc dbus_message_set_serial*(message: ptr DBusMessage; serial: dbus_uint32_t) {.cdecl, importc: "dbus_message_set_serial", dynlib: libdbus.}
-proc dbus_message_set_reply_serial*(message: ptr DBusMessage; reply_serial: dbus_uint32_t): dbus_bool_t {.cdecl, importc: "dbus_message_set_reply_serial", dynlib: libdbus.}
-proc dbus_message_get_reply_serial*(message: ptr DBusMessage): dbus_uint32_t {.cdecl, importc: "dbus_message_get_reply_serial", dynlib: libdbus.}
-proc dbus_message_set_auto_start*(message: ptr DBusMessage; auto_start: dbus_bool_t) {.cdecl, importc: "dbus_message_set_auto_start", dynlib: libdbus.}
-proc dbus_message_get_auto_start*(message: ptr DBusMessage): dbus_bool_t {.cdecl, importc: "dbus_message_get_auto_start", dynlib: libdbus.}
-proc dbus_message_get_path_decomposed*(message: ptr DBusMessage; path: ptr cstringArray): dbus_bool_t {.cdecl, importc: "dbus_message_get_path_decomposed", dynlib: libdbus.}
-proc dbus_message_append_args*(message: ptr DBusMessage; first_arg_type: cint): dbus_bool_t {.varargs, cdecl, importc: "dbus_message_append_args", dynlib: libdbus.}
-proc dbus_message_get_args*(message: ptr DBusMessage; error: ptr DBusError; first_arg_type: cint): dbus_bool_t {.varargs, cdecl, importc: "dbus_message_get_args", dynlib: libdbus.}
-proc dbus_message_contains_unix_fds*(message: ptr DBusMessage): dbus_bool_t {.cdecl, importc: "dbus_message_contains_unix_fds", dynlib: libdbus.}
-proc dbus_message_iter_init*(message: ptr DBusMessage; iter: ptr DBusMessageIter): dbus_bool_t {.cdecl, importc: "dbus_message_iter_init", dynlib: libdbus.}
-proc dbus_message_iter_has_next*(iter: ptr DBusMessageIter): dbus_bool_t {.cdecl, importc: "dbus_message_iter_has_next", dynlib: libdbus.}
-proc dbus_message_iter_next*(iter: ptr DBusMessageIter): dbus_bool_t {.cdecl, importc: "dbus_message_iter_next", dynlib: libdbus.}
-proc dbus_message_iter_get_signature*(iter: ptr DBusMessageIter): cstring {.cdecl, importc: "dbus_message_iter_get_signature", dynlib: libdbus.}
-proc dbus_message_iter_get_arg_type*(iter: ptr DBusMessageIter): cint {.cdecl, importc: "dbus_message_iter_get_arg_type", dynlib: libdbus.}
-proc dbus_message_iter_get_element_type*(iter: ptr DBusMessageIter): cint {.cdecl, importc: "dbus_message_iter_get_element_type", dynlib: libdbus.}
-proc dbus_message_iter_recurse*(iter: ptr DBusMessageIter; sub: ptr DBusMessageIter) {.cdecl, importc: "dbus_message_iter_recurse", dynlib: libdbus.}
-proc dbus_message_iter_get_basic*(iter: ptr DBusMessageIter; value: pointer) {.cdecl, importc: "dbus_message_iter_get_basic", dynlib: libdbus.}
-proc dbus_message_iter_get_array_len*(iter: ptr DBusMessageIter): cint {.cdecl, importc: "dbus_message_iter_get_array_len", dynlib: libdbus.}
-proc dbus_message_iter_get_fixed_array*(iter: ptr DBusMessageIter; value: pointer; n_elements: ptr cint) {.cdecl, importc: "dbus_message_iter_get_fixed_array", dynlib: libdbus.}
-proc dbus_message_iter_init_append*(message: ptr DBusMessage; iter: ptr DBusMessageIter) {.cdecl, importc: "dbus_message_iter_init_append", dynlib: libdbus.}
-proc dbus_message_iter_append_basic*(iter: ptr DBusMessageIter; `type`: cint; value: pointer): dbus_bool_t {.cdecl, importc: "dbus_message_iter_append_basic", dynlib: libdbus.}
-proc dbus_message_iter_append_fixed_array*(iter: ptr DBusMessageIter; element_type: cint; value: pointer; n_elements: cint): dbus_bool_t {.cdecl, importc: "dbus_message_iter_append_fixed_array", dynlib: libdbus.}
-proc dbus_message_iter_open_container*(iter: ptr DBusMessageIter; `type`: cint; contained_signature: cstring; sub: ptr DBusMessageIter): dbus_bool_t {.cdecl, importc: "dbus_message_iter_open_container", dynlib: libdbus.}
-proc dbus_message_iter_close_container*(iter: ptr DBusMessageIter; sub: ptr DBusMessageIter): dbus_bool_t {.cdecl, importc: "dbus_message_iter_close_container", dynlib: libdbus.}
-proc dbus_message_iter_abandon_container*(iter: ptr DBusMessageIter; sub: ptr DBusMessageIter) {.cdecl, importc: "dbus_message_iter_abandon_container", dynlib: libdbus.}
-proc dbus_message_lock*(message: ptr DBusMessage) {.cdecl, importc: "dbus_message_lock", dynlib: libdbus.}
-proc dbus_set_error_from_message*(error: ptr DBusError; message: ptr DBusMessage): dbus_bool_t {.cdecl, importc: "dbus_set_error_from_message", dynlib: libdbus.}
-proc dbus_message_allocate_data_slot*(slot_p: ptr dbus_int32_t): dbus_bool_t {.cdecl, importc: "dbus_message_allocate_data_slot", dynlib: libdbus.}
-proc dbus_message_free_data_slot*(slot_p: ptr dbus_int32_t) {.cdecl, importc: "dbus_message_free_data_slot", dynlib: libdbus.}
-proc dbus_message_set_data*(message: ptr DBusMessage; slot: dbus_int32_t; data: pointer; free_data_func: DBusFreeFunction): dbus_bool_t {.cdecl, importc: "dbus_message_set_data", dynlib: libdbus.}
-proc dbus_message_get_data*(message: ptr DBusMessage; slot: dbus_int32_t): pointer {.cdecl, importc: "dbus_message_get_data", dynlib: libdbus.}
-proc dbus_message_type_from_string*(type_str: cstring): cint {.cdecl, importc: "dbus_message_type_from_string", dynlib: libdbus.}
-proc dbus_message_type_to_string*(`type`: cint): cstring {.cdecl, importc: "dbus_message_type_to_string", dynlib: libdbus.}
-proc dbus_message_marshal*(msg: ptr DBusMessage; marshalled_data_p: cstringArray; len_p: ptr cint): dbus_bool_t {.cdecl, importc: "dbus_message_marshal", dynlib: libdbus.}
-proc dbus_message_demarshal*(str: cstring; len: cint; error: ptr DBusError): ptr DBusMessage {.cdecl, importc: "dbus_message_demarshal", dynlib: libdbus.}
-proc dbus_message_demarshal_bytes_needed*(str: cstring; len: cint): cint {.cdecl, importc: "dbus_message_demarshal_bytes_needed", dynlib: libdbus.}
-proc dbus_connection_open*(address: cstring; error: ptr DBusError): ptr DBusConnection {.cdecl, importc: "dbus_connection_open", dynlib: libdbus.}
-proc dbus_connection_open_private*(address: cstring; error: ptr DBusError): ptr DBusConnection {.cdecl, importc: "dbus_connection_open_private", dynlib: libdbus.}
-proc dbus_connection_ref*(connection: ptr DBusConnection): ptr DBusConnection {.cdecl, importc: "dbus_connection_ref", dynlib: libdbus.}
-proc dbus_connection_unref*(connection: ptr DBusConnection) {.cdecl, importc: "dbus_connection_unref", dynlib: libdbus.}
-proc dbus_connection_close*(connection: ptr DBusConnection) {.cdecl, importc: "dbus_connection_close", dynlib: libdbus.}
-proc dbus_connection_get_is_connected*(connection: ptr DBusConnection): dbus_bool_t {.cdecl, importc: "dbus_connection_get_is_connected", dynlib: libdbus.}
-proc dbus_connection_get_is_authenticated*(connection: ptr DBusConnection): dbus_bool_t {.cdecl, importc: "dbus_connection_get_is_authenticated", dynlib: libdbus.}
-proc dbus_connection_get_is_anonymous*(connection: ptr DBusConnection): dbus_bool_t {.cdecl, importc: "dbus_connection_get_is_anonymous", dynlib: libdbus.}
-proc dbus_connection_get_server_id*(connection: ptr DBusConnection): cstring {.cdecl, importc: "dbus_connection_get_server_id", dynlib: libdbus.}
-proc dbus_connection_can_send_type*(connection: ptr DBusConnection; `type`: cint): dbus_bool_t {.cdecl, importc: "dbus_connection_can_send_type", dynlib: libdbus.}
-proc dbus_connection_set_exit_on_disconnect*(connection: ptr DBusConnection; exit_on_disconnect: dbus_bool_t) {.cdecl, importc: "dbus_connection_set_exit_on_disconnect", dynlib: libdbus.}
-proc dbus_connection_flush*(connection: ptr DBusConnection) {.cdecl, importc: "dbus_connection_flush", dynlib: libdbus.}
-proc dbus_connection_read_write_dispatch*(connection: ptr DBusConnection; timeout_milliseconds: cint): dbus_bool_t {.cdecl, importc: "dbus_connection_read_write_dispatch", dynlib: libdbus.}
-proc dbus_connection_read_write*(connection: ptr DBusConnection; timeout_milliseconds: cint): dbus_bool_t {.cdecl, importc: "dbus_connection_read_write", dynlib: libdbus.}
-proc dbus_connection_borrow_message*(connection: ptr DBusConnection): ptr DBusMessage {.cdecl, importc: "dbus_connection_borrow_message", dynlib: libdbus.}
-proc dbus_connection_return_message*(connection: ptr DBusConnection; message: ptr DBusMessage) {.cdecl, importc: "dbus_connection_return_message", dynlib: libdbus.}
-proc dbus_connection_steal_borrowed_message*(connection: ptr DBusConnection; message: ptr DBusMessage) {.cdecl, importc: "dbus_connection_steal_borrowed_message", dynlib: libdbus.}
-proc dbus_connection_pop_message*(connection: ptr DBusConnection): ptr DBusMessage {.cdecl, importc: "dbus_connection_pop_message", dynlib: libdbus.}
-proc dbus_connection_get_dispatch_status*(connection: ptr DBusConnection): DBusDispatchStatus {.cdecl, importc: "dbus_connection_get_dispatch_status", dynlib: libdbus.}
-proc dbus_connection_dispatch*(connection: ptr DBusConnection): DBusDispatchStatus {.cdecl, importc: "dbus_connection_dispatch", dynlib: libdbus.}
-proc dbus_connection_has_messages_to_send*(connection: ptr DBusConnection): dbus_bool_t {.cdecl, importc: "dbus_connection_has_messages_to_send", dynlib: libdbus.}
-proc dbus_connection_send*(connection: ptr DBusConnection; message: ptr DBusMessage; client_serial: ptr dbus_uint32_t): dbus_bool_t {.cdecl, importc: "dbus_connection_send", dynlib: libdbus.}
-proc dbus_connection_send_with_reply*(connection: ptr DBusConnection; message: ptr DBusMessage; pending_return: ptr ptr DBusPendingCall; timeout_milliseconds: cint): dbus_bool_t {.cdecl, importc: "dbus_connection_send_with_reply", dynlib: libdbus.}
-proc dbus_connection_send_with_reply_and_block*(connection: ptr DBusConnection; message: ptr DBusMessage; timeout_milliseconds: cint; error: ptr DBusError): ptr DBusMessage {.cdecl, importc: "dbus_connection_send_with_reply_and_block", dynlib: libdbus.}
-proc dbus_connection_set_watch_functions*(connection: ptr DBusConnection; add_function: DBusAddWatchFunction; remove_function: DBusRemoveWatchFunction; toggled_function: DBusWatchToggledFunction; data: pointer; free_data_function: DBusFreeFunction): dbus_bool_t {.cdecl, importc: "dbus_connection_set_watch_functions", dynlib: libdbus.}
-proc dbus_connection_set_timeout_functions*(connection: ptr DBusConnection; add_function: DBusAddTimeoutFunction; remove_function: DBusRemoveTimeoutFunction; toggled_function: DBusTimeoutToggledFunction; data: pointer; free_data_function: DBusFreeFunction): dbus_bool_t {.cdecl, importc: "dbus_connection_set_timeout_functions", dynlib: libdbus.}
-proc dbus_connection_set_wakeup_main_function*(connection: ptr DBusConnection; wakeup_main_function: DBusWakeupMainFunction; data: pointer; free_data_function: DBusFreeFunction) {.cdecl, importc: "dbus_connection_set_wakeup_main_function", dynlib: libdbus.}
-proc dbus_connection_set_dispatch_status_function*(connection: ptr DBusConnection; function: DBusDispatchStatusFunction; data: pointer; free_data_function: DBusFreeFunction) {.cdecl, importc: "dbus_connection_set_dispatch_status_function", dynlib: libdbus.}
-proc dbus_connection_get_unix_user*(connection: ptr DBusConnection; uid: ptr culong): dbus_bool_t {.cdecl, importc: "dbus_connection_get_unix_user", dynlib: libdbus.}
-proc dbus_connection_get_unix_process_id*(connection: ptr DBusConnection; pid: ptr culong): dbus_bool_t {.cdecl, importc: "dbus_connection_get_unix_process_id", dynlib: libdbus.}
-proc dbus_connection_get_adt_audit_session_data*(connection: ptr DBusConnection; data: ptr pointer; data_size: ptr dbus_int32_t): dbus_bool_t {.cdecl, importc: "dbus_connection_get_adt_audit_session_data", dynlib: libdbus.}
-proc dbus_connection_set_unix_user_function*(connection: ptr DBusConnection; function: DBusAllowUnixUserFunction; data: pointer; free_data_function: DBusFreeFunction) {.cdecl, importc: "dbus_connection_set_unix_user_function", dynlib: libdbus.}
-proc dbus_connection_get_windows_user*(connection: ptr DBusConnection; windows_sid_p: cstringArray): dbus_bool_t {.cdecl, importc: "dbus_connection_get_windows_user", dynlib: libdbus.}
-proc dbus_connection_set_windows_user_function*(connection: ptr DBusConnection; function: DBusAllowWindowsUserFunction; data: pointer; free_data_function: DBusFreeFunction) {.cdecl, importc: "dbus_connection_set_windows_user_function", dynlib: libdbus.}
-proc dbus_connection_set_allow_anonymous*(connection: ptr DBusConnection; value: dbus_bool_t) {.cdecl, importc: "dbus_connection_set_allow_anonymous", dynlib: libdbus.}
-proc dbus_connection_set_route_peer_messages*(connection: ptr DBusConnection; value: dbus_bool_t) {.cdecl, importc: "dbus_connection_set_route_peer_messages", dynlib: libdbus.}
+var
+  dbus_error_init*: proc(error: ptr DBusError) {.cdecl.}
+  dbus_error_free*: proc(error: ptr DBusError) {.cdecl.}
+  dbus_set_error*: proc(error: ptr DBusError; name: cstring; message: cstring) {.varargs, cdecl.}
+  dbus_set_error_const*: proc(error: ptr DBusError; name: cstring; message: cstring) {.cdecl.}
+  dbus_move_error*: proc(src: ptr DBusError; dest: ptr DBusError) {.cdecl.}
+  dbus_error_has_name*: proc(error: ptr DBusError; name: cstring): dbus_bool_t {.  cdecl.}
+  dbus_error_is_set*: proc(error: ptr DBusError): dbus_bool_t {.cdecl.}
+  dbus_parse_address*: proc(address: cstring; entry: ptr ptr ptr DBusAddressEntry; array_len: ptr cint; error: ptr DBusError): dbus_bool_t {.cdecl.}
+  dbus_address_entry_get_value*: proc(entry: ptr DBusAddressEntry; key: cstring): cstring {.cdecl.}
+  dbus_address_entry_get_method*: proc(entry: ptr DBusAddressEntry): cstring {.cdecl.}
+  dbus_address_entries_free*: proc(entries: ptr ptr DBusAddressEntry) {.cdecl.}
+  dbus_address_escape_value*: proc(value: cstring): cstring {.cdecl.}
+  dbus_address_unescape_value*: proc(value: cstring; error: ptr DBusError): cstring {.cdecl.}
+  dbus_malloc*: proc(bytes: csize_t): pointer {.cdecl.}
+  dbus_malloc0*: proc(bytes: csize_t): pointer {.cdecl.}
+  dbus_realloc*: proc(memory: pointer; bytes: csize_t): pointer {.cdecl.}
+  dbus_free*: proc(memory: pointer) {.cdecl.}
+  dbus_free_string_array*: proc(str_array: cstringArray) {.cdecl.}
+  dbus_shutdown*: proc() {.cdecl.}
+  dbus_message_new*: proc(message_type: cint): ptr DBusMessage {.cdecl.}
+  dbus_message_new_method_call*: proc(bus_name: cstring; path: cstring; iface: cstring; `method`: cstring): ptr DBusMessage {.cdecl.}
+  dbus_message_new_method_return*: proc(method_call: ptr DBusMessage): ptr DBusMessage {.cdecl.}
+  dbus_message_new_signal*: proc(path: cstring; iface: cstring; name: cstring): ptr DBusMessage {.cdecl.}
+  dbus_message_new_error*: proc(reply_to: ptr DBusMessage; error_name: cstring; error_message: cstring): ptr DBusMessage {.cdecl.}
+  dbus_message_new_error_printf*: proc(reply_to: ptr DBusMessage; error_name: cstring; error_format: cstring): ptr DBusMessage {.varargs, cdecl.}
+  dbus_message_copy*: proc(message: ptr DBusMessage): ptr DBusMessage {.cdecl.}
+  dbus_message_ref*: proc(message: ptr DBusMessage): ptr DBusMessage {.cdecl.}
+  dbus_message_unref*: proc(message: ptr DBusMessage) {.cdecl.}
+  dbus_message_get_type*: proc(message: ptr DBusMessage): cint {.cdecl.}
+  dbus_message_set_path*: proc(message: ptr DBusMessage; object_path: cstring): dbus_bool_t {.cdecl.}
+  dbus_message_get_path*: proc(message: ptr DBusMessage): cstring {.cdecl.}
+  dbus_message_has_path*: proc(message: ptr DBusMessage; object_path: cstring): dbus_bool_t {.cdecl.}
+  dbus_message_set_interface*: proc(message: ptr DBusMessage; iface: cstring): dbus_bool_t {.cdecl.}
+  dbus_message_get_interface*: proc(message: ptr DBusMessage): cstring {.cdecl.}
+  dbus_message_has_interface*: proc(message: ptr DBusMessage; iface: cstring): dbus_bool_t {.cdecl.}
+  dbus_message_set_member*: proc(message: ptr DBusMessage; member: cstring): dbus_bool_t {.cdecl.}
+  dbus_message_get_member*: proc(message: ptr DBusMessage): cstring {.cdecl.}
+  dbus_message_has_member*: proc(message: ptr DBusMessage; member: cstring): dbus_bool_t {.cdecl.}
+  dbus_message_set_error_name*: proc(message: ptr DBusMessage; name: cstring): dbus_bool_t {.cdecl.}
+  dbus_message_get_error_name*: proc(message: ptr DBusMessage): cstring {.cdecl.}
+  dbus_message_set_destination*: proc(message: ptr DBusMessage; destination: cstring): dbus_bool_t {.cdecl.}
+  dbus_message_get_destination*: proc(message: ptr DBusMessage): cstring {.cdecl.}
+  dbus_message_set_sender*: proc(message: ptr DBusMessage; sender: cstring): dbus_bool_t {.cdecl.}
+  dbus_message_get_sender*: proc(message: ptr DBusMessage): cstring {.cdecl.}
+  dbus_message_get_signature*: proc(message: ptr DBusMessage): cstring {.cdecl.}
+  dbus_message_set_no_reply*: proc(message: ptr DBusMessage; no_reply: dbus_bool_t) {.cdecl.}
+  dbus_message_get_no_reply*: proc(message: ptr DBusMessage): dbus_bool_t {.cdecl.}
+  dbus_message_is_method_call*: proc(message: ptr DBusMessage; iface: cstring; `method`: cstring): dbus_bool_t {.cdecl.}
+  dbus_message_is_signal*: proc(message: ptr DBusMessage; iface: cstring; signal_name: cstring): dbus_bool_t {.cdecl.}
+  dbus_message_is_error*: proc(message: ptr DBusMessage; error_name: cstring): dbus_bool_t {.cdecl.}
+  dbus_message_has_destination*: proc(message: ptr DBusMessage; bus_name: cstring): dbus_bool_t {.cdecl.}
+  dbus_message_has_sender*: proc(message: ptr DBusMessage; unique_bus_name: cstring): dbus_bool_t {.cdecl.}
+  dbus_message_has_signature*: proc(message: ptr DBusMessage; signature: cstring): dbus_bool_t {.cdecl.}
+  dbus_message_get_serial*: proc(message: ptr DBusMessage): dbus_uint32_t {.cdecl.}
+  dbus_message_set_serial*: proc(message: ptr DBusMessage; serial: dbus_uint32_t) {.cdecl.}
+  dbus_message_set_reply_serial*: proc(message: ptr DBusMessage; reply_serial: dbus_uint32_t): dbus_bool_t {.cdecl.}
+  dbus_message_get_reply_serial*: proc(message: ptr DBusMessage): dbus_uint32_t {.cdecl.}
+  dbus_message_set_auto_start*: proc(message: ptr DBusMessage; auto_start: dbus_bool_t) {.cdecl.}
+  dbus_message_get_auto_start*: proc(message: ptr DBusMessage): dbus_bool_t {.cdecl.}
+  dbus_message_get_path_decomposed*: proc(message: ptr DBusMessage; path: ptr cstringArray): dbus_bool_t {.cdecl.}
+  dbus_message_append_args*: proc(message: ptr DBusMessage; first_arg_type: cint): dbus_bool_t {.varargs, cdecl.}
+  dbus_message_get_args*: proc(message: ptr DBusMessage; error: ptr DBusError; first_arg_type: cint): dbus_bool_t {.varargs, cdecl.}
+  dbus_message_contains_unix_fds*: proc(message: ptr DBusMessage): dbus_bool_t {.cdecl.}
+  dbus_message_iter_init*: proc(message: ptr DBusMessage; iter: ptr DBusMessageIter): dbus_bool_t {.cdecl.}
+  dbus_message_iter_has_next*: proc(iter: ptr DBusMessageIter): dbus_bool_t {.cdecl.}
+  dbus_message_iter_next*: proc(iter: ptr DBusMessageIter): dbus_bool_t {.cdecl.}
+  dbus_message_iter_get_signature*: proc(iter: ptr DBusMessageIter): cstring {.cdecl.}
+  dbus_message_iter_get_arg_type*: proc(iter: ptr DBusMessageIter): cint {.cdecl.}
+  dbus_message_iter_get_element_type*: proc(iter: ptr DBusMessageIter): cint {.cdecl.}
+  dbus_message_iter_recurse*: proc(iter: ptr DBusMessageIter; sub: ptr DBusMessageIter) {.cdecl.}
+  dbus_message_iter_get_basic*: proc(iter: ptr DBusMessageIter; value: pointer) {.cdecl.}
+  dbus_message_iter_get_array_len*: proc(iter: ptr DBusMessageIter): cint {.cdecl.}
+  dbus_message_iter_get_fixed_array*: proc(iter: ptr DBusMessageIter; value: pointer; n_elements: ptr cint) {.cdecl.}
+  dbus_message_iter_init_append*: proc(message: ptr DBusMessage; iter: ptr DBusMessageIter) {.cdecl.}
+  dbus_message_iter_append_basic*: proc(iter: ptr DBusMessageIter; `type`: cint; value: pointer): dbus_bool_t {.cdecl.}
+  dbus_message_iter_append_fixed_array*: proc(iter: ptr DBusMessageIter; element_type: cint; value: pointer; n_elements: cint): dbus_bool_t {.cdecl.}
+  dbus_message_iter_open_container*: proc(iter: ptr DBusMessageIter; `type`: cint; contained_signature: cstring; sub: ptr DBusMessageIter): dbus_bool_t {.cdecl.}
+  dbus_message_iter_close_container*: proc(iter: ptr DBusMessageIter; sub: ptr DBusMessageIter): dbus_bool_t {.cdecl.}
+  dbus_message_iter_abandon_container*: proc(iter: ptr DBusMessageIter; sub: ptr DBusMessageIter) {.cdecl.}
+  dbus_message_lock*: proc(message: ptr DBusMessage) {.cdecl.}
+  dbus_set_error_from_message*: proc(error: ptr DBusError; message: ptr DBusMessage): dbus_bool_t {.cdecl.}
+  dbus_message_allocate_data_slot*: proc(slot_p: ptr dbus_int32_t): dbus_bool_t {.cdecl.}
+  dbus_message_free_data_slot*: proc(slot_p: ptr dbus_int32_t) {.cdecl.}
+  dbus_message_set_data*: proc(message: ptr DBusMessage; slot: dbus_int32_t; data: pointer; free_data_func: DBusFreeFunction): dbus_bool_t {.cdecl.}
+  dbus_message_get_data*: proc(message: ptr DBusMessage; slot: dbus_int32_t): pointer {.cdecl.}
+  dbus_message_type_from_string*: proc(type_str: cstring): cint {.cdecl.}
+  dbus_message_type_to_string*: proc(`type`: cint): cstring {.cdecl.}
+  dbus_message_marshal*: proc(msg: ptr DBusMessage; marshalled_data_p: cstringArray; len_p: ptr cint): dbus_bool_t {.cdecl.}
+  dbus_message_demarshal*: proc(str: cstring; len: cint; error: ptr DBusError): ptr DBusMessage {.cdecl.}
+  dbus_message_demarshal_bytes_needed*: proc(str: cstring; len: cint): cint {.cdecl.}
+  dbus_connection_open*: proc(address: cstring; error: ptr DBusError): ptr DBusConnection {.cdecl.}
+  dbus_connection_open_private*: proc(address: cstring; error: ptr DBusError): ptr DBusConnection {.cdecl.}
+  dbus_connection_ref*: proc(connection: ptr DBusConnection): ptr DBusConnection {.cdecl.}
+  dbus_connection_unref*: proc(connection: ptr DBusConnection) {.cdecl.}
+  dbus_connection_close*: proc(connection: ptr DBusConnection) {.cdecl.}
+  dbus_connection_get_is_connected*: proc(connection: ptr DBusConnection): dbus_bool_t {.cdecl.}
+  dbus_connection_get_is_authenticated*: proc(connection: ptr DBusConnection): dbus_bool_t {.cdecl.}
+  dbus_connection_get_is_anonymous*: proc(connection: ptr DBusConnection): dbus_bool_t {.cdecl.}
+  dbus_connection_get_server_id*: proc(connection: ptr DBusConnection): cstring {.cdecl.}
+  dbus_connection_can_send_type*: proc(connection: ptr DBusConnection; `type`: cint): dbus_bool_t {.cdecl.}
+  dbus_connection_set_exit_on_disconnect*: proc(connection: ptr DBusConnection; exit_on_disconnect: dbus_bool_t) {.cdecl.}
+  dbus_connection_flush*: proc(connection: ptr DBusConnection) {.cdecl.}
+  dbus_connection_read_write_dispatch*: proc(connection: ptr DBusConnection; timeout_milliseconds: cint): dbus_bool_t {.cdecl.}
+  dbus_connection_read_write*: proc(connection: ptr DBusConnection; timeout_milliseconds: cint): dbus_bool_t {.cdecl.}
+  dbus_connection_borrow_message*: proc(connection: ptr DBusConnection): ptr DBusMessage {.cdecl.}
+  dbus_connection_return_message*: proc(connection: ptr DBusConnection; message: ptr DBusMessage) {.cdecl.}
+  dbus_connection_steal_borrowed_message*: proc(connection: ptr DBusConnection; message: ptr DBusMessage) {.cdecl.}
+  dbus_connection_pop_message*: proc(connection: ptr DBusConnection): ptr DBusMessage {.cdecl.}
+  dbus_connection_get_dispatch_status*: proc(connection: ptr DBusConnection): DBusDispatchStatus {.cdecl.}
+  dbus_connection_dispatch*: proc(connection: ptr DBusConnection): DBusDispatchStatus {.cdecl.}
+  dbus_connection_has_messages_to_send*: proc(connection: ptr DBusConnection): dbus_bool_t {.cdecl.}
+  dbus_connection_send*: proc(connection: ptr DBusConnection; message: ptr DBusMessage; client_serial: ptr dbus_uint32_t): dbus_bool_t {.cdecl.}
+  dbus_connection_send_with_reply*: proc(connection: ptr DBusConnection; message: ptr DBusMessage; pending_return: ptr ptr DBusPendingCall; timeout_milliseconds: cint): dbus_bool_t {.cdecl.}
+  dbus_connection_send_with_reply_and_block*: proc(connection: ptr DBusConnection; message: ptr DBusMessage; timeout_milliseconds: cint; error: ptr DBusError): ptr DBusMessage {.cdecl.}
+  dbus_connection_set_watch_functions*: proc(connection: ptr DBusConnection; add_function: DBusAddWatchFunction; remove_function: DBusRemoveWatchFunction; toggled_function: DBusWatchToggledFunction; data: pointer; free_data_function: DBusFreeFunction): dbus_bool_t {.cdecl.}
+  dbus_connection_set_timeout_functions*: proc(connection: ptr DBusConnection; add_function: DBusAddTimeoutFunction; remove_function: DBusRemoveTimeoutFunction; toggled_function: DBusTimeoutToggledFunction; data: pointer; free_data_function: DBusFreeFunction): dbus_bool_t {.cdecl.}
+  dbus_connection_set_wakeup_main_function*: proc(connection: ptr DBusConnection; wakeup_main_function: DBusWakeupMainFunction; data: pointer; free_data_function: DBusFreeFunction) {.cdecl.}
+  dbus_connection_set_dispatch_status_function*: proc(connection: ptr DBusConnection; function: DBusDispatchStatusFunction; data: pointer; free_data_function: DBusFreeFunction) {.cdecl.}
+  dbus_connection_get_unix_user*: proc(connection: ptr DBusConnection; uid: ptr culong): dbus_bool_t {.cdecl.}
+  dbus_connection_get_unix_process_id*: proc(connection: ptr DBusConnection; pid: ptr culong): dbus_bool_t {.cdecl.}
+  dbus_connection_get_adt_audit_session_data*: proc(connection: ptr DBusConnection; data: ptr pointer; data_size: ptr dbus_int32_t): dbus_bool_t {.cdecl.}
+  dbus_connection_set_unix_user_function*: proc(connection: ptr DBusConnection; function: DBusAllowUnixUserFunction; data: pointer; free_data_function: DBusFreeFunction) {.cdecl.}
+  dbus_connection_get_windows_user*: proc(connection: ptr DBusConnection; windows_sid_p: cstringArray): dbus_bool_t {.cdecl.}
+  dbus_connection_set_windows_user_function*: proc(connection: ptr DBusConnection; function: DBusAllowWindowsUserFunction; data: pointer; free_data_function: DBusFreeFunction) {.cdecl.}
+  dbus_connection_set_allow_anonymous*: proc(connection: ptr DBusConnection; value: dbus_bool_t) {.cdecl.}
+  dbus_connection_set_route_peer_messages*: proc(connection: ptr DBusConnection; value: dbus_bool_t) {.cdecl.}
 
 # Filters
-proc dbus_connection_add_filter*(connection: ptr DBusConnection; function: DBusHandleMessageFunction; user_data: pointer; free_data_function: DBusFreeFunction): dbus_bool_t {.  cdecl, importc: "dbus_connection_add_filter", dynlib: libdbus.}
-proc dbus_connection_remove_filter*(connection: ptr DBusConnection; function: DBusHandleMessageFunction; user_data: pointer) {.cdecl, importc: "dbus_connection_remove_filter", dynlib: libdbus.}
+  dbus_connection_add_filter*: proc(connection: ptr DBusConnection; function: DBusHandleMessageFunction; user_data: pointer; free_data_function: DBusFreeFunction): dbus_bool_t {.  cdecl.}
+  dbus_connection_remove_filter*: proc(connection: ptr DBusConnection; function: DBusHandleMessageFunction; user_data: pointer) {.cdecl.}
 
 # Other
-proc dbus_connection_allocate_data_slot*(slot_p: ptr dbus_int32_t): dbus_bool_t {.  cdecl, importc: "dbus_connection_allocate_data_slot", dynlib: libdbus.}
-proc dbus_connection_free_data_slot*(slot_p: ptr dbus_int32_t) {.cdecl, importc: "dbus_connection_free_data_slot", dynlib: libdbus.}
-proc dbus_connection_set_data*(connection: ptr DBusConnection; slot: dbus_int32_t; data: pointer; free_data_func: DBusFreeFunction): dbus_bool_t {.cdecl, importc: "dbus_connection_set_data", dynlib: libdbus.}
-proc dbus_connection_get_data*(connection: ptr DBusConnection; slot: dbus_int32_t): pointer {.cdecl, importc: "dbus_connection_get_data", dynlib: libdbus.}
-proc dbus_connection_set_change_sigpipe*(will_modify_sigpipe: dbus_bool_t) {.cdecl, importc: "dbus_connection_set_change_sigpipe", dynlib: libdbus.}
-proc dbus_connection_set_max_message_size*(connection: ptr DBusConnection; size: clong) {.cdecl, importc: "dbus_connection_set_max_message_size", dynlib: libdbus.}
-proc dbus_connection_get_max_message_size*(connection: ptr DBusConnection): clong {.cdecl, importc: "dbus_connection_get_max_message_size", dynlib: libdbus.}
-proc dbus_connection_set_max_received_size*(connection: ptr DBusConnection; size: clong) {.cdecl, importc: "dbus_connection_set_max_received_size", dynlib: libdbus.}
-proc dbus_connection_get_max_received_size*(connection: ptr DBusConnection): clong {.cdecl, importc: "dbus_connection_get_max_received_size", dynlib: libdbus.}
-proc dbus_connection_set_max_message_unix_fds*(connection: ptr DBusConnection; n: clong) {.cdecl, importc: "dbus_connection_set_max_message_unix_fds", dynlib: libdbus.}
-proc dbus_connection_get_max_message_unix_fds*(connection: ptr DBusConnection): clong {.cdecl, importc: "dbus_connection_get_max_message_unix_fds", dynlib: libdbus.}
-proc dbus_connection_set_max_received_unix_fds*(connection: ptr DBusConnection; n: clong) {.cdecl, importc: "dbus_connection_set_max_received_unix_fds", dynlib: libdbus.}
-proc dbus_connection_get_max_received_unix_fds*(connection: ptr DBusConnection): clong {.cdecl, importc: "dbus_connection_get_max_received_unix_fds", dynlib: libdbus.}
-proc dbus_connection_get_outgoing_size*(connection: ptr DBusConnection): clong {.cdecl, importc: "dbus_connection_get_outgoing_size", dynlib: libdbus.}
-proc dbus_connection_get_outgoing_unix_fds*(connection: ptr DBusConnection): clong {.cdecl, importc: "dbus_connection_get_outgoing_unix_fds", dynlib: libdbus.}
-proc dbus_connection_preallocate_send*(connection: ptr DBusConnection): ptr DBusPreallocatedSend {.cdecl, importc: "dbus_connection_preallocate_send", dynlib: libdbus.}
-proc dbus_connection_free_preallocated_send*(connection: ptr DBusConnection; preallocated: ptr DBusPreallocatedSend) {.cdecl, importc: "dbus_connection_free_preallocated_send", dynlib: libdbus.}
-proc dbus_connection_send_preallocated*(connection: ptr DBusConnection; preallocated: ptr DBusPreallocatedSend; message: ptr DBusMessage; client_serial: ptr dbus_uint32_t) {.cdecl, importc: "dbus_connection_send_preallocated", dynlib: libdbus.}
-proc dbus_connection_try_register_object_path*(connection: ptr DBusConnection; path: cstring; vtable: ptr DBusObjectPathVTable; user_data: pointer; error: ptr DBusError): dbus_bool_t {.cdecl, importc: "dbus_connection_try_register_object_path", dynlib: libdbus.}
-proc dbus_connection_register_object_path*(connection: ptr DBusConnection; path: cstring; vtable: ptr DBusObjectPathVTable; user_data: pointer): dbus_bool_t {.  cdecl, importc: "dbus_connection_register_object_path", dynlib: libdbus.}
-proc dbus_connection_try_register_fallback*(connection: ptr DBusConnection; path: cstring; vtable: ptr DBusObjectPathVTable; user_data: pointer; error: ptr DBusError): dbus_bool_t {.cdecl, importc: "dbus_connection_try_register_fallback", dynlib: libdbus.}
-proc dbus_connection_register_fallback*(connection: ptr DBusConnection; path: cstring; vtable: ptr DBusObjectPathVTable; user_data: pointer): dbus_bool_t {.cdecl, importc: "dbus_connection_register_fallback", dynlib: libdbus.}
-proc dbus_connection_unregister_object_path*(connection: ptr DBusConnection; path: cstring): dbus_bool_t {.cdecl, importc: "dbus_connection_unregister_object_path", dynlib: libdbus.}
-proc dbus_connection_get_object_path_data*(connection: ptr DBusConnection; path: cstring; data_p: ptr pointer): dbus_bool_t {.cdecl, importc: "dbus_connection_get_object_path_data", dynlib: libdbus.}
-proc dbus_connection_list_registered*(connection: ptr DBusConnection; parent_path: cstring; child_entries: ptr cstringArray): dbus_bool_t {.cdecl, importc: "dbus_connection_list_registered", dynlib: libdbus.}
-proc dbus_connection_get_unix_fd*(connection: ptr DBusConnection; fd: ptr cint): dbus_bool_t {.cdecl, importc: "dbus_connection_get_unix_fd", dynlib: libdbus.}
-proc dbus_connection_get_socket*(connection: ptr DBusConnection; fd: ptr cint): dbus_bool_t {.cdecl, importc: "dbus_connection_get_socket", dynlib: libdbus.}
-proc dbus_watch_get_fd*(watch: ptr DBusWatch): cint {.cdecl, importc: "dbus_watch_get_fd", dynlib: libdbus.}
-proc dbus_watch_get_unix_fd*(watch: ptr DBusWatch): cint {.cdecl, importc: "dbus_watch_get_unix_fd", dynlib: libdbus.}
-proc dbus_watch_get_socket*(watch: ptr DBusWatch): cint {.cdecl, importc: "dbus_watch_get_socket", dynlib: libdbus.}
-proc dbus_watch_get_flags*(watch: ptr DBusWatch): cuint {.cdecl, importc: "dbus_watch_get_flags", dynlib: libdbus.}
-proc dbus_watch_get_data*(watch: ptr DBusWatch): pointer {.cdecl, importc: "dbus_watch_get_data", dynlib: libdbus.}
-proc dbus_watch_set_data*(watch: ptr DBusWatch; data: pointer; free_data_function: DBusFreeFunction) {.cdecl, importc: "dbus_watch_set_data", dynlib: libdbus.}
-proc dbus_watch_handle*(watch: ptr DBusWatch; flags: cuint): dbus_bool_t {.cdecl, importc: "dbus_watch_handle", dynlib: libdbus.}
-proc dbus_watch_get_enabled*(watch: ptr DBusWatch): dbus_bool_t {.cdecl, importc: "dbus_watch_get_enabled", dynlib: libdbus.}
-proc dbus_timeout_get_interval*(timeout: ptr DBusTimeout): cint {.cdecl, importc: "dbus_timeout_get_interval", dynlib: libdbus.}
-proc dbus_timeout_get_data*(timeout: ptr DBusTimeout): pointer {.cdecl, importc: "dbus_timeout_get_data", dynlib: libdbus.}
-proc dbus_timeout_set_data*(timeout: ptr DBusTimeout; data: pointer; free_data_function: DBusFreeFunction) {.cdecl, importc: "dbus_timeout_set_data", dynlib: libdbus.}
-proc dbus_timeout_handle*(timeout: ptr DBusTimeout): dbus_bool_t {.cdecl, importc: "dbus_timeout_handle", dynlib: libdbus.}
-proc dbus_timeout_get_enabled*(timeout: ptr DBusTimeout): dbus_bool_t {.cdecl, importc: "dbus_timeout_get_enabled", dynlib: libdbus.}
-proc dbus_bus_get*(`type`: DBusBusType; error: ptr DBusError): ptr DBusConnection {.cdecl, importc: "dbus_bus_get", dynlib: libdbus.}
-proc dbus_bus_get_private*(`type`: DBusBusType; error: ptr DBusError): ptr DBusConnection {.cdecl, importc: "dbus_bus_get_private", dynlib: libdbus.}
-proc dbus_bus_register*(connection: ptr DBusConnection; error: ptr DBusError): dbus_bool_t {.cdecl, importc: "dbus_bus_register", dynlib: libdbus.}
-proc dbus_bus_set_unique_name*(connection: ptr DBusConnection; unique_name: cstring): dbus_bool_t {.cdecl, importc: "dbus_bus_set_unique_name", dynlib: libdbus.}
-proc dbus_bus_get_unique_name*(connection: ptr DBusConnection): cstring {.cdecl, importc: "dbus_bus_get_unique_name", dynlib: libdbus.}
-proc dbus_bus_get_unix_user*(connection: ptr DBusConnection; name: cstring; error: ptr DBusError): culong {.cdecl, importc: "dbus_bus_get_unix_user", dynlib: libdbus.}
-proc dbus_bus_get_id*(connection: ptr DBusConnection; error: ptr DBusError): cstring {.cdecl, importc: "dbus_bus_get_id", dynlib: libdbus.}
-proc dbus_bus_request_name*(connection: ptr DBusConnection; name: cstring; flags: cuint; error: ptr DBusError): cint {.cdecl, importc: "dbus_bus_request_name", dynlib: libdbus.}
-proc dbus_bus_release_name*(connection: ptr DBusConnection; name: cstring; error: ptr DBusError): cint {.cdecl, importc: "dbus_bus_release_name", dynlib: libdbus.}
-proc dbus_bus_name_has_owner*(connection: ptr DBusConnection; name: cstring; error: ptr DBusError): dbus_bool_t {.cdecl, importc: "dbus_bus_name_has_owner", dynlib: libdbus.}
-proc dbus_bus_start_service_by_name*(connection: ptr DBusConnection; name: cstring; flags: dbus_uint32_t; reply: ptr dbus_uint32_t; error: ptr DBusError): dbus_bool_t {.cdecl, importc: "dbus_bus_start_service_by_name", dynlib: libdbus.}
-proc dbus_bus_add_match*(connection: ptr DBusConnection; rule: cstring; error: ptr DBusError) {.cdecl, importc: "dbus_bus_add_match", dynlib: libdbus.}
-proc dbus_bus_remove_match*(connection: ptr DBusConnection; rule: cstring; error: ptr DBusError) {.cdecl, importc: "dbus_bus_remove_match", dynlib: libdbus.}
-proc dbus_get_local_machine_id*(): cstring {.cdecl, importc: "dbus_get_local_machine_id", dynlib: libdbus.}
-proc dbus_get_version*(major_version_p: ptr cint; minor_version_p: ptr cint; micro_version_p: ptr cint) {.cdecl, importc: "dbus_get_version", dynlib: libdbus.}
-proc dbus_pending_call_ref*(pending: ptr DBusPendingCall): ptr DBusPendingCall {.cdecl, importc: "dbus_pending_call_ref", dynlib: libdbus.}
-proc dbus_pending_call_unref*(pending: ptr DBusPendingCall) {.cdecl, importc: "dbus_pending_call_unref", dynlib: libdbus.}
-proc dbus_pending_call_set_notify*(pending: ptr DBusPendingCall; function: DBusPendingCallNotifyFunction; user_data: pointer; free_user_data: DBusFreeFunction): dbus_bool_t {.cdecl, importc: "dbus_pending_call_set_notify", dynlib: libdbus.}
-proc dbus_pending_call_cancel*(pending: ptr DBusPendingCall) {.cdecl, importc: "dbus_pending_call_cancel", dynlib: libdbus.}
-proc dbus_pending_call_get_completed*(pending: ptr DBusPendingCall): dbus_bool_t {.cdecl, importc: "dbus_pending_call_get_completed", dynlib: libdbus.}
-proc dbus_pending_call_steal_reply*(pending: ptr DBusPendingCall): ptr DBusMessage {.cdecl, importc: "dbus_pending_call_steal_reply", dynlib: libdbus.}
-proc dbus_pending_call_block*(pending: ptr DBusPendingCall) {.cdecl, importc: "dbus_pending_call_block", dynlib: libdbus.}
-proc dbus_pending_call_allocate_data_slot*(slot_p: ptr dbus_int32_t): dbus_bool_t {.cdecl, importc: "dbus_pending_call_allocate_data_slot", dynlib: libdbus.}
-proc dbus_pending_call_free_data_slot*(slot_p: ptr dbus_int32_t) {.cdecl, importc: "dbus_pending_call_free_data_slot", dynlib: libdbus.}
-proc dbus_pending_call_set_data*(pending: ptr DBusPendingCall; slot: dbus_int32_t; data: pointer; free_data_func: DBusFreeFunction): dbus_bool_t {.  cdecl, importc: "dbus_pending_call_set_data", dynlib: libdbus.}
-proc dbus_pending_call_get_data*(pending: ptr DBusPendingCall; slot: dbus_int32_t): pointer {.cdecl, importc: "dbus_pending_call_get_data", dynlib: libdbus.}
-proc dbus_server_listen*(address: cstring; error: ptr DBusError): ptr DBusServer {.cdecl, importc: "dbus_server_listen", dynlib: libdbus.}
-proc dbus_server_ref*(server: ptr DBusServer): ptr DBusServer {.cdecl, importc: "dbus_server_ref", dynlib: libdbus.}
-proc dbus_server_unref*(server: ptr DBusServer) {.cdecl, importc: "dbus_server_unref", dynlib: libdbus.}
-proc dbus_server_disconnect*(server: ptr DBusServer) {.cdecl, importc: "dbus_server_disconnect", dynlib: libdbus.}
-proc dbus_server_get_is_connected*(server: ptr DBusServer): dbus_bool_t {.cdecl, importc: "dbus_server_get_is_connected", dynlib: libdbus.}
-proc dbus_server_get_address*(server: ptr DBusServer): cstring {.cdecl, importc: "dbus_server_get_address", dynlib: libdbus.}
-proc dbus_server_get_id*(server: ptr DBusServer): cstring {.cdecl, importc: "dbus_server_get_id", dynlib: libdbus.}
-proc dbus_server_set_new_connection_function*(server: ptr DBusServer; function: DBusNewConnectionFunction; data: pointer; free_data_function: DBusFreeFunction) {.cdecl, importc: "dbus_server_set_new_connection_function", dynlib: libdbus.}
-proc dbus_server_set_watch_functions*(server: ptr DBusServer; add_function: DBusAddWatchFunction; remove_function: DBusRemoveWatchFunction; toggled_function: DBusWatchToggledFunction; data: pointer; free_data_function: DBusFreeFunction): dbus_bool_t {.cdecl, importc: "dbus_server_set_watch_functions", dynlib: libdbus.}
-proc dbus_server_set_timeout_functions*(server: ptr DBusServer; add_function: DBusAddTimeoutFunction; remove_function: DBusRemoveTimeoutFunction; toggled_function: DBusTimeoutToggledFunction; data: pointer; free_data_function: DBusFreeFunction): dbus_bool_t {.cdecl, importc: "dbus_server_set_timeout_functions", dynlib: libdbus.}
-proc dbus_server_set_auth_mechanisms*(server: ptr DBusServer; mechanisms: cstringArray): dbus_bool_t {.cdecl, importc: "dbus_server_set_auth_mechanisms", dynlib: libdbus.}
-proc dbus_server_allocate_data_slot*(slot_p: ptr dbus_int32_t): dbus_bool_t {.cdecl, importc: "dbus_server_allocate_data_slot", dynlib: libdbus.}
-proc dbus_server_free_data_slot*(slot_p: ptr dbus_int32_t) {.cdecl, importc: "dbus_server_free_data_slot", dynlib: libdbus.}
-proc dbus_server_set_data*(server: ptr DBusServer; slot: cint; data: pointer; free_data_func: DBusFreeFunction): dbus_bool_t {.  cdecl, importc: "dbus_server_set_data", dynlib: libdbus.}
-proc dbus_server_get_data*(server: ptr DBusServer; slot: cint): pointer {.cdecl, importc: "dbus_server_get_data", dynlib: libdbus.}
-proc dbus_signature_iter_init*(iter: ptr DBusSignatureIter; signature: cstring) {.cdecl, importc: "dbus_signature_iter_init", dynlib: libdbus.}
-proc dbus_signature_iter_get_current_type*(iter: ptr DBusSignatureIter): cint {.cdecl, importc: "dbus_signature_iter_get_current_type", dynlib: libdbus.}
-proc dbus_signature_iter_get_signature*(iter: ptr DBusSignatureIter): cstring {.cdecl, importc: "dbus_signature_iter_get_signature", dynlib: libdbus.}
-proc dbus_signature_iter_get_element_type*(iter: ptr DBusSignatureIter): cint {.cdecl, importc: "dbus_signature_iter_get_element_type", dynlib: libdbus.}
-proc dbus_signature_iter_next*(iter: ptr DBusSignatureIter): dbus_bool_t {.cdecl, importc: "dbus_signature_iter_next", dynlib: libdbus.}
-proc dbus_signature_iter_recurse*(iter: ptr DBusSignatureIter; subiter: ptr DBusSignatureIter) {.cdecl, importc: "dbus_signature_iter_recurse", dynlib: libdbus.}
-proc dbus_signature_validate*(signature: cstring; error: ptr DBusError): dbus_bool_t {.cdecl, importc: "dbus_signature_validate", dynlib: libdbus.}
-proc dbus_signature_validate_single*(signature: cstring; error: ptr DBusError): dbus_bool_t {.cdecl, importc: "dbus_signature_validate_single", dynlib: libdbus.}
-proc dbus_type_is_valid*(typecode: cint): dbus_bool_t {.cdecl, importc: "dbus_type_is_valid", dynlib: libdbus.}
-proc dbus_type_is_basic*(typecode: cint): dbus_bool_t {.cdecl, importc: "dbus_type_is_basic", dynlib: libdbus.}
-proc dbus_type_is_container*(typecode: cint): dbus_bool_t {.cdecl, importc: "dbus_type_is_container", dynlib: libdbus.}
-proc dbus_type_is_fixed*(typecode: cint): dbus_bool_t {.cdecl, importc: "dbus_type_is_fixed", dynlib: libdbus.}
-proc dbus_validate_path*(path: cstring; error: ptr DBusError): dbus_bool_t {.cdecl, importc: "dbus_validate_path", dynlib: libdbus.}
-proc dbus_validate_interface*(name: cstring; error: ptr DBusError): dbus_bool_t {.cdecl, importc: "dbus_validate_interface", dynlib: libdbus.}
-proc dbus_validate_member*(name: cstring; error: ptr DBusError): dbus_bool_t {.cdecl, importc: "dbus_validate_member", dynlib: libdbus.}
-proc dbus_validate_error_name*(name: cstring; error: ptr DBusError): dbus_bool_t {.cdecl, importc: "dbus_validate_error_name", dynlib: libdbus.}
-proc dbus_validate_bus_name*(name: cstring; error: ptr DBusError): dbus_bool_t {.cdecl, importc: "dbus_validate_bus_name", dynlib: libdbus.}
-proc dbus_validate_utf8*(alleged_utf8: cstring; error: ptr DBusError): dbus_bool_t {.cdecl, importc: "dbus_validate_utf8", dynlib: libdbus.}
-proc dbus_threads_init*(functions: ptr DBusThreadFunctions): dbus_bool_t {.cdecl, importc: "dbus_threads_init", dynlib: libdbus.}
-proc dbus_threads_init_default*(): dbus_bool_t {.cdecl, importc: "dbus_threads_init_default", dynlib: libdbus.}
+  dbus_connection_allocate_data_slot*: proc(slot_p: ptr dbus_int32_t): dbus_bool_t {.  cdecl.}
+  dbus_connection_free_data_slot*: proc(slot_p: ptr dbus_int32_t) {.cdecl.}
+  dbus_connection_set_data*: proc(connection: ptr DBusConnection; slot: dbus_int32_t; data: pointer; free_data_func: DBusFreeFunction): dbus_bool_t {.cdecl.}
+  dbus_connection_get_data*: proc(connection: ptr DBusConnection; slot: dbus_int32_t): pointer {.cdecl.}
+  dbus_connection_set_change_sigpipe*: proc(will_modify_sigpipe: dbus_bool_t) {.cdecl.}
+  dbus_connection_set_max_message_size*: proc(connection: ptr DBusConnection; size: clong) {.cdecl.}
+  dbus_connection_get_max_message_size*: proc(connection: ptr DBusConnection): clong {.cdecl.}
+  dbus_connection_set_max_received_size*: proc(connection: ptr DBusConnection; size: clong) {.cdecl.}
+  dbus_connection_get_max_received_size*: proc(connection: ptr DBusConnection): clong {.cdecl.}
+  dbus_connection_set_max_message_unix_fds*: proc(connection: ptr DBusConnection; n: clong) {.cdecl.}
+  dbus_connection_get_max_message_unix_fds*: proc(connection: ptr DBusConnection): clong {.cdecl.}
+  dbus_connection_set_max_received_unix_fds*: proc(connection: ptr DBusConnection; n: clong) {.cdecl.}
+  dbus_connection_get_max_received_unix_fds*: proc(connection: ptr DBusConnection): clong {.cdecl.}
+  dbus_connection_get_outgoing_size*: proc(connection: ptr DBusConnection): clong {.cdecl.}
+  dbus_connection_get_outgoing_unix_fds*: proc(connection: ptr DBusConnection): clong {.cdecl.}
+  dbus_connection_preallocate_send*: proc(connection: ptr DBusConnection): ptr DBusPreallocatedSend {.cdecl.}
+  dbus_connection_free_preallocated_send*: proc(connection: ptr DBusConnection; preallocated: ptr DBusPreallocatedSend) {.cdecl.}
+  dbus_connection_send_preallocated*: proc(connection: ptr DBusConnection; preallocated: ptr DBusPreallocatedSend; message: ptr DBusMessage; client_serial: ptr dbus_uint32_t) {.cdecl.}
+  dbus_connection_try_register_object_path*: proc(connection: ptr DBusConnection; path: cstring; vtable: ptr DBusObjectPathVTable; user_data: pointer; error: ptr DBusError): dbus_bool_t {.cdecl.}
+  dbus_connection_register_object_path*: proc(connection: ptr DBusConnection; path: cstring; vtable: ptr DBusObjectPathVTable; user_data: pointer): dbus_bool_t {.  cdecl.}
+  dbus_connection_try_register_fallback*: proc(connection: ptr DBusConnection; path: cstring; vtable: ptr DBusObjectPathVTable; user_data: pointer; error: ptr DBusError): dbus_bool_t {.cdecl.}
+  dbus_connection_register_fallback*: proc(connection: ptr DBusConnection; path: cstring; vtable: ptr DBusObjectPathVTable; user_data: pointer): dbus_bool_t {.cdecl.}
+  dbus_connection_unregister_object_path*: proc(connection: ptr DBusConnection; path: cstring): dbus_bool_t {.cdecl.}
+  dbus_connection_get_object_path_data*: proc(connection: ptr DBusConnection; path: cstring; data_p: ptr pointer): dbus_bool_t {.cdecl.}
+  dbus_connection_list_registered*: proc(connection: ptr DBusConnection; parent_path: cstring; child_entries: ptr cstringArray): dbus_bool_t {.cdecl.}
+  dbus_connection_get_unix_fd*: proc(connection: ptr DBusConnection; fd: ptr cint): dbus_bool_t {.cdecl.}
+  dbus_connection_get_socket*: proc(connection: ptr DBusConnection; fd: ptr cint): dbus_bool_t {.cdecl.}
+  dbus_watch_get_fd*: proc(watch: ptr DBusWatch): cint {.cdecl.}
+  dbus_watch_get_unix_fd*: proc(watch: ptr DBusWatch): cint {.cdecl.}
+  dbus_watch_get_socket*: proc(watch: ptr DBusWatch): cint {.cdecl.}
+  dbus_watch_get_flags*: proc(watch: ptr DBusWatch): cuint {.cdecl.}
+  dbus_watch_get_data*: proc(watch: ptr DBusWatch): pointer {.cdecl.}
+  dbus_watch_set_data*: proc(watch: ptr DBusWatch; data: pointer; free_data_function: DBusFreeFunction) {.cdecl.}
+  dbus_watch_handle*: proc(watch: ptr DBusWatch; flags: cuint): dbus_bool_t {.cdecl.}
+  dbus_watch_get_enabled*: proc(watch: ptr DBusWatch): dbus_bool_t {.cdecl.}
+  dbus_timeout_get_interval*: proc(timeout: ptr DBusTimeout): cint {.cdecl.}
+  dbus_timeout_get_data*: proc(timeout: ptr DBusTimeout): pointer {.cdecl.}
+  dbus_timeout_set_data*: proc(timeout: ptr DBusTimeout; data: pointer; free_data_function: DBusFreeFunction) {.cdecl.}
+  dbus_timeout_handle*: proc(timeout: ptr DBusTimeout): dbus_bool_t {.cdecl.}
+  dbus_timeout_get_enabled*: proc(timeout: ptr DBusTimeout): dbus_bool_t {.cdecl.}
+  dbus_bus_get*: proc(`type`: DBusBusType; error: ptr DBusError): ptr DBusConnection {.cdecl.}
+  dbus_bus_get_private*: proc(`type`: DBusBusType; error: ptr DBusError): ptr DBusConnection {.cdecl.}
+  dbus_bus_register*: proc(connection: ptr DBusConnection; error: ptr DBusError): dbus_bool_t {.cdecl.}
+  dbus_bus_set_unique_name*: proc(connection: ptr DBusConnection; unique_name: cstring): dbus_bool_t {.cdecl.}
+  dbus_bus_get_unique_name*: proc(connection: ptr DBusConnection): cstring {.cdecl.}
+  dbus_bus_get_unix_user*: proc(connection: ptr DBusConnection; name: cstring; error: ptr DBusError): culong {.cdecl.}
+  dbus_bus_get_id*: proc(connection: ptr DBusConnection; error: ptr DBusError): cstring {.cdecl.}
+  dbus_bus_request_name*: proc(connection: ptr DBusConnection; name: cstring; flags: cuint; error: ptr DBusError): cint {.cdecl.}
+  dbus_bus_release_name*: proc(connection: ptr DBusConnection; name: cstring; error: ptr DBusError): cint {.cdecl.}
+  dbus_bus_name_has_owner*: proc(connection: ptr DBusConnection; name: cstring; error: ptr DBusError): dbus_bool_t {.cdecl.}
+  dbus_bus_start_service_by_name*: proc(connection: ptr DBusConnection; name: cstring; flags: dbus_uint32_t; reply: ptr dbus_uint32_t; error: ptr DBusError): dbus_bool_t {.cdecl.}
+  dbus_bus_add_match*: proc(connection: ptr DBusConnection; rule: cstring; error: ptr DBusError) {.cdecl.}
+  dbus_bus_remove_match*: proc(connection: ptr DBusConnection; rule: cstring; error: ptr DBusError) {.cdecl.}
+  dbus_get_local_machine_id*: proc(): cstring {.cdecl.}
+  dbus_get_version*: proc(major_version_p: ptr cint; minor_version_p: ptr cint; micro_version_p: ptr cint) {.cdecl.}
+  dbus_pending_call_ref*: proc(pending: ptr DBusPendingCall): ptr DBusPendingCall {.cdecl.}
+  dbus_pending_call_unref*: proc(pending: ptr DBusPendingCall) {.cdecl.}
+  dbus_pending_call_set_notify*: proc(pending: ptr DBusPendingCall; function: DBusPendingCallNotifyFunction; user_data: pointer; free_user_data: DBusFreeFunction): dbus_bool_t {.cdecl.}
+  dbus_pending_call_cancel*: proc(pending: ptr DBusPendingCall) {.cdecl.}
+  dbus_pending_call_get_completed*: proc(pending: ptr DBusPendingCall): dbus_bool_t {.cdecl.}
+  dbus_pending_call_steal_reply*: proc(pending: ptr DBusPendingCall): ptr DBusMessage {.cdecl.}
+  dbus_pending_call_block*: proc(pending: ptr DBusPendingCall) {.cdecl.}
+  dbus_pending_call_allocate_data_slot*: proc(slot_p: ptr dbus_int32_t): dbus_bool_t {.cdecl.}
+  dbus_pending_call_free_data_slot*: proc(slot_p: ptr dbus_int32_t) {.cdecl.}
+  dbus_pending_call_set_data*: proc(pending: ptr DBusPendingCall; slot: dbus_int32_t; data: pointer; free_data_func: DBusFreeFunction): dbus_bool_t {.  cdecl.}
+  dbus_pending_call_get_data*: proc(pending: ptr DBusPendingCall; slot: dbus_int32_t): pointer {.cdecl.}
+  dbus_server_listen*: proc(address: cstring; error: ptr DBusError): ptr DBusServer {.cdecl.}
+  dbus_server_ref*: proc(server: ptr DBusServer): ptr DBusServer {.cdecl.}
+  dbus_server_unref*: proc(server: ptr DBusServer) {.cdecl.}
+  dbus_server_disconnect*: proc(server: ptr DBusServer) {.cdecl.}
+  dbus_server_get_is_connected*: proc(server: ptr DBusServer): dbus_bool_t {.cdecl.}
+  dbus_server_get_address*: proc(server: ptr DBusServer): cstring {.cdecl.}
+  dbus_server_get_id*: proc(server: ptr DBusServer): cstring {.cdecl.}
+  dbus_server_set_new_connection_function*: proc(server: ptr DBusServer; function: DBusNewConnectionFunction; data: pointer; free_data_function: DBusFreeFunction) {.cdecl.}
+  dbus_server_set_watch_functions*: proc(server: ptr DBusServer; add_function: DBusAddWatchFunction; remove_function: DBusRemoveWatchFunction; toggled_function: DBusWatchToggledFunction; data: pointer; free_data_function: DBusFreeFunction): dbus_bool_t {.cdecl.}
+  dbus_server_set_timeout_functions*: proc(server: ptr DBusServer; add_function: DBusAddTimeoutFunction; remove_function: DBusRemoveTimeoutFunction; toggled_function: DBusTimeoutToggledFunction; data: pointer; free_data_function: DBusFreeFunction): dbus_bool_t {.cdecl.}
+  dbus_server_set_auth_mechanisms*: proc(server: ptr DBusServer; mechanisms: cstringArray): dbus_bool_t {.cdecl.}
+  dbus_server_allocate_data_slot*: proc(slot_p: ptr dbus_int32_t): dbus_bool_t {.cdecl.}
+  dbus_server_free_data_slot*: proc(slot_p: ptr dbus_int32_t) {.cdecl.}
+  dbus_server_set_data*: proc(server: ptr DBusServer; slot: cint; data: pointer; free_data_func: DBusFreeFunction): dbus_bool_t {.  cdecl.}
+  dbus_server_get_data*: proc(server: ptr DBusServer; slot: cint): pointer {.cdecl.}
+  dbus_signature_iter_init*: proc(iter: ptr DBusSignatureIter; signature: cstring) {.cdecl.}
+  dbus_signature_iter_get_current_type*: proc(iter: ptr DBusSignatureIter): cint {.cdecl.}
+  dbus_signature_iter_get_signature*: proc(iter: ptr DBusSignatureIter): cstring {.cdecl.}
+  dbus_signature_iter_get_element_type*: proc(iter: ptr DBusSignatureIter): cint {.cdecl.}
+  dbus_signature_iter_next*: proc(iter: ptr DBusSignatureIter): dbus_bool_t {.cdecl.}
+  dbus_signature_iter_recurse*: proc(iter: ptr DBusSignatureIter; subiter: ptr DBusSignatureIter) {.cdecl.}
+  dbus_signature_validate*: proc(signature: cstring; error: ptr DBusError): dbus_bool_t {.cdecl.}
+  dbus_signature_validate_single*: proc(signature: cstring; error: ptr DBusError): dbus_bool_t {.cdecl.}
+  dbus_type_is_valid*: proc(typecode: cint): dbus_bool_t {.cdecl.}
+  dbus_type_is_basic*: proc(typecode: cint): dbus_bool_t {.cdecl.}
+  dbus_type_is_container*: proc(typecode: cint): dbus_bool_t {.cdecl.}
+  dbus_type_is_fixed*: proc(typecode: cint): dbus_bool_t {.cdecl.}
+  dbus_validate_path*: proc(path: cstring; error: ptr DBusError): dbus_bool_t {.cdecl.}
+  dbus_validate_interface*: proc(name: cstring; error: ptr DBusError): dbus_bool_t {.cdecl.}
+  dbus_validate_member*: proc(name: cstring; error: ptr DBusError): dbus_bool_t {.cdecl.}
+  dbus_validate_error_name*: proc(name: cstring; error: ptr DBusError): dbus_bool_t {.cdecl.}
+  dbus_validate_bus_name*: proc(name: cstring; error: ptr DBusError): dbus_bool_t {.cdecl.}
+  dbus_validate_utf8*: proc(alleged_utf8: cstring; error: ptr DBusError): dbus_bool_t {.cdecl.}
+  dbus_threads_init*: proc(functions: ptr DBusThreadFunctions): dbus_bool_t {.cdecl.}
+  dbus_threads_init_default*: proc(): dbus_bool_t {.cdecl.}
+
+proc loadAPI*() =
+  let handle = dynlib.loadLib("libdbus-1.so.3")
+  macro str(sym): string = newLit($sym)
+  template load(sym): untyped =
+    sym = cast[typeof sym](handle.symAddr(str(sym)))
+  load(dbus_error_init)
+  load(dbus_error_free)
+  load(dbus_set_error)
+  load(dbus_set_error_const)
+  load(dbus_move_error)
+  load(dbus_error_has_name)
+  load(dbus_error_is_set)
+  load(dbus_parse_address)
+  load(dbus_address_entry_get_value)
+  load(dbus_address_entry_get_method)
+  load(dbus_address_entries_free)
+  load(dbus_address_escape_value)
+  load(dbus_address_unescape_value)
+  load(dbus_malloc)
+  load(dbus_malloc0)
+  load(dbus_realloc)
+  load(dbus_free)
+  load(dbus_free_string_array)
+  load(dbus_shutdown)
+  load(dbus_message_new)
+  load(dbus_message_new_method_call)
+  load(dbus_message_new_method_return)
+  load(dbus_message_new_signal)
+  load(dbus_message_new_error)
+  load(dbus_message_new_error_printf)
+  load(dbus_message_copy)
+  load(dbus_message_ref)
+  load(dbus_message_unref)
+  load(dbus_message_get_type)
+  load(dbus_message_set_path)
+  load(dbus_message_get_path)
+  load(dbus_message_has_path)
+  load(dbus_message_set_interface)
+  load(dbus_message_get_interface)
+  load(dbus_message_has_interface)
+  load(dbus_message_set_member)
+  load(dbus_message_get_member)
+  load(dbus_message_has_member)
+  load(dbus_message_set_error_name)
+  load(dbus_message_get_error_name)
+  load(dbus_message_set_destination)
+  load(dbus_message_get_destination)
+  load(dbus_message_set_sender)
+  load(dbus_message_get_sender)
+  load(dbus_message_get_signature)
+  load(dbus_message_set_no_reply)
+  load(dbus_message_get_no_reply)
+  load(dbus_message_is_method_call)
+  load(dbus_message_is_signal)
+  load(dbus_message_is_error)
+  load(dbus_message_has_destination)
+  load(dbus_message_has_sender)
+  load(dbus_message_has_signature)
+  load(dbus_message_get_serial)
+  load(dbus_message_set_serial)
+  load(dbus_message_set_reply_serial)
+  load(dbus_message_get_reply_serial)
+  load(dbus_message_set_auto_start)
+  load(dbus_message_get_auto_start)
+  load(dbus_message_get_path_decomposed)
+  load(dbus_message_append_args)
+  load(dbus_message_get_args)
+  load(dbus_message_contains_unix_fds)
+  load(dbus_message_iter_init)
+  load(dbus_message_iter_has_next)
+  load(dbus_message_iter_next)
+  load(dbus_message_iter_get_signature)
+  load(dbus_message_iter_get_arg_type)
+  load(dbus_message_iter_get_element_type)
+  load(dbus_message_iter_recurse)
+  load(dbus_message_iter_get_basic)
+  load(dbus_message_iter_get_array_len)
+  load(dbus_message_iter_get_fixed_array)
+  load(dbus_message_iter_init_append)
+  load(dbus_message_iter_append_basic)
+  load(dbus_message_iter_append_fixed_array)
+  load(dbus_message_iter_open_container)
+  load(dbus_message_iter_close_container)
+  load(dbus_message_iter_abandon_container)
+  load(dbus_message_lock)
+  load(dbus_set_error_from_message)
+  load(dbus_message_allocate_data_slot)
+  load(dbus_message_free_data_slot)
+  load(dbus_message_set_data)
+  load(dbus_message_get_data)
+  load(dbus_message_type_from_string)
+  load(dbus_message_type_to_string)
+  load(dbus_message_marshal)
+  load(dbus_message_demarshal)
+  load(dbus_message_demarshal_bytes_needed)
+  load(dbus_connection_open)
+  load(dbus_connection_open_private)
+  load(dbus_connection_ref)
+  load(dbus_connection_unref)
+  load(dbus_connection_close)
+  load(dbus_connection_get_is_connected)
+  load(dbus_connection_get_is_authenticated)
+  load(dbus_connection_get_is_anonymous)
+  load(dbus_connection_get_server_id)
+  load(dbus_connection_can_send_type)
+  load(dbus_connection_set_exit_on_disconnect)
+  load(dbus_connection_flush)
+  load(dbus_connection_read_write_dispatch)
+  load(dbus_connection_read_write)
+  load(dbus_connection_borrow_message)
+  load(dbus_connection_return_message)
+  load(dbus_connection_steal_borrowed_message)
+  load(dbus_connection_pop_message)
+  load(dbus_connection_get_dispatch_status)
+  load(dbus_connection_dispatch)
+  load(dbus_connection_has_messages_to_send)
+  load(dbus_connection_send)
+  load(dbus_connection_send_with_reply)
+  load(dbus_connection_send_with_reply_and_block)
+  load(dbus_connection_set_watch_functions)
+  load(dbus_connection_set_timeout_functions)
+  load(dbus_connection_set_wakeup_main_function)
+  load(dbus_connection_set_dispatch_status_function)
+  load(dbus_connection_get_unix_user)
+  load(dbus_connection_get_unix_process_id)
+  load(dbus_connection_get_adt_audit_session_data)
+  load(dbus_connection_set_unix_user_function)
+  load(dbus_connection_get_windows_user)
+  load(dbus_connection_set_windows_user_function)
+  load(dbus_connection_set_allow_anonymous)
+  load(dbus_connection_set_route_peer_messages)
+
+  # Filters
+  load(dbus_connection_add_filter)
+  load(dbus_connection_remove_filter)
+
+  # Other
+  load(dbus_connection_allocate_data_slot)
+  load(dbus_connection_free_data_slot)
+  load(dbus_connection_set_data)
+  load(dbus_connection_get_data)
+  load(dbus_connection_set_change_sigpipe)
+  load(dbus_connection_set_max_message_size)
+  load(dbus_connection_get_max_message_size)
+  load(dbus_connection_set_max_received_size)
+  load(dbus_connection_get_max_received_size)
+  load(dbus_connection_set_max_message_unix_fds)
+  load(dbus_connection_get_max_message_unix_fds)
+  load(dbus_connection_set_max_received_unix_fds)
+  load(dbus_connection_get_max_received_unix_fds)
+  load(dbus_connection_get_outgoing_size)
+  load(dbus_connection_get_outgoing_unix_fds)
+  load(dbus_connection_preallocate_send)
+  load(dbus_connection_free_preallocated_send)
+  load(dbus_connection_send_preallocated)
+  load(dbus_connection_try_register_object_path)
+  load(dbus_connection_register_object_path)
+  load(dbus_connection_try_register_fallback)
+  load(dbus_connection_register_fallback)
+  load(dbus_connection_unregister_object_path)
+  load(dbus_connection_get_object_path_data)
+  load(dbus_connection_list_registered)
+  load(dbus_connection_get_unix_fd)
+  load(dbus_connection_get_socket)
+  load(dbus_watch_get_fd)
+  load(dbus_watch_get_unix_fd)
+  load(dbus_watch_get_socket)
+  load(dbus_watch_get_flags)
+  load(dbus_watch_get_data)
+  load(dbus_watch_set_data)
+  load(dbus_watch_handle)
+  load(dbus_watch_get_enabled)
+  load(dbus_timeout_get_interval)
+  load(dbus_timeout_get_data)
+  load(dbus_timeout_set_data)
+  load(dbus_timeout_handle)
+  load(dbus_timeout_get_enabled)
+  load(dbus_bus_get)
+  load(dbus_bus_get_private)
+  load(dbus_bus_register)
+  load(dbus_bus_set_unique_name)
+  load(dbus_bus_get_unique_name)
+  load(dbus_bus_get_unix_user)
+  load(dbus_bus_get_id)
+  load(dbus_bus_request_name)
+  load(dbus_bus_release_name)
+  load(dbus_bus_name_has_owner)
+  load(dbus_bus_start_service_by_name)
+  load(dbus_bus_add_match)
+  load(dbus_bus_remove_match)
+  load(dbus_get_local_machine_id)
+  load(dbus_get_version)
+  load(dbus_pending_call_ref)
+  load(dbus_pending_call_unref)
+  load(dbus_pending_call_set_notify)
+  load(dbus_pending_call_cancel)
+  load(dbus_pending_call_get_completed)
+  load(dbus_pending_call_steal_reply)
+  load(dbus_pending_call_block)
+  load(dbus_pending_call_allocate_data_slot)
+  load(dbus_pending_call_free_data_slot)
+  load(dbus_pending_call_set_data)
+  load(dbus_pending_call_get_data)
+  load(dbus_server_listen)
+  load(dbus_server_ref)
+  load(dbus_server_unref)
+  load(dbus_server_disconnect)
+  load(dbus_server_get_is_connected)
+  load(dbus_server_get_address)
+  load(dbus_server_get_id)
+  load(dbus_server_set_new_connection_function)
+  load(dbus_server_set_watch_functions)
+  load(dbus_server_set_timeout_functions)
+  load(dbus_server_set_auth_mechanisms)
+  load(dbus_server_allocate_data_slot)
+  load(dbus_server_free_data_slot)
+  load(dbus_server_set_data)
+  load(dbus_server_get_data)
+  load(dbus_signature_iter_init)
+  load(dbus_signature_iter_get_current_type)
+  load(dbus_signature_iter_get_signature)
+  load(dbus_signature_iter_get_element_type)
+  load(dbus_signature_iter_next)
+  load(dbus_signature_iter_recurse)
+  load(dbus_signature_validate)
+  load(dbus_signature_validate_single)
+  load(dbus_type_is_valid)
+  load(dbus_type_is_basic)
+  load(dbus_type_is_container)
+  load(dbus_type_is_fixed)
+  load(dbus_validate_path)
+  load(dbus_validate_interface)
+  load(dbus_validate_member)
+  load(dbus_validate_error_name)
+  load(dbus_validate_bus_name)
+  load(dbus_validate_utf8)
+  load(dbus_threads_init)
+  load(dbus_threads_init_default)

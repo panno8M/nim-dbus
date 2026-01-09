@@ -3,6 +3,8 @@ import unittest
 import tables
 import dbus
 
+dbus.loadAPI()
+
 const
   TEST_BUSNAME = "com.zielmicha.test"
   TEST_OBJECTPATH = ObjectPath("/com/zielmicha/test")
