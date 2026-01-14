@@ -1,10 +1,15 @@
 # RAW
 
-proc requestName*(bus: Bus, name: string) =
+type DbusNameFlag* = enum
+  AllowReplaceMent
+  ReplaceExisting
+  DoNotQueue
+
+proc requestName*(bus: Bus, name: string; flags: set[DbusNameFlag] = {}) =
   var err: DBusError
   dbus_error_init(addr err)
 
-  let ret = dbus_bus_request_name(bus.conn, name, 0, addr err)
+  let ret = dbus_bus_request_name(bus.conn, name, cast[cuint](flags), addr err)
 
   if ret < 0:
     defer: dbus_error_free(addr err)
